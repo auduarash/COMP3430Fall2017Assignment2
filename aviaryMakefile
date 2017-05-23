@@ -1,6 +1,5 @@
-GCC=gcc-4.8
-CFLAGS=-Wall
-LINKFLAGS=-lcurses -pthread
+GCC=gcc
+CFLAGS=-Wall -lcurses -pthread
 
 
 run: main
@@ -8,7 +7,7 @@ run: main
 
 
 main: main.o example.o console.o
-	$(GCC) $(CFLAGS) console.o example.o main.o -o main $(LINKFLAGS)
+	$(GCC) $(CFLAGS) console.o example.o main.o -o main
 
 main.o: main.c
 	$(GCC) $(CFLAGS) -c main.c
