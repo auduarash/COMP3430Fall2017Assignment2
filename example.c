@@ -48,20 +48,23 @@ static char* PLAYER_GRAPHIC[PLAYER_ANIM_TILES][PLAYER_HEIGHT+1] = {
 void exampleRun()
 {
 	int i;
+	int offset = 1;
 	if (consoleInit(GAME_ROWS, GAME_COLS, GAME_BOARD))
-        {
-		for (i = 0; i<PLAYER_ANIM_TILES; i++)
-		{
-			char** tile = PLAYER_GRAPHIC[i];
+	{
+		while (true){
+			for (i = 0; i<PLAYER_ANIM_TILES; i++)
+			{
+				char** tile = PLAYER_GRAPHIC[i];
+				consoleDrawImage(10 + offset, 10 + offset, tile, PLAYER_HEIGHT);
+				consoleRefresh();
+				sleep(1);
+				consoleClearImage(10 + offset,10 + offset, PLAYER_HEIGHT, strlen(tile[0]));
+			}
+			offset *= -1;
+		}
 
-			consoleClearImage(10,10,PLAYER_HEIGHT, strlen(tile[0]));
-			consoleDrawImage(10, 10, tile, PLAYER_HEIGHT);
-			consoleRefresh();
-			sleep(1);
-		}		
-
-                finalKeypress(); /* wait for final key before killing curses and game */
-        }       
-        consoleFinish();        	
+		finalKeypress(); /* wait for final key before killing curses and game */
+	}       
+	consoleFinish();        	
 }
 

@@ -178,7 +178,7 @@ void finalKeypress()
 {
 	flushinp();
 	sleepTicks(FINAL_PAUSE);
-    	move(LINES-1, COLS-1);
+	move(LINES-1, COLS-1);
 	getch(); /* wait for user to press a character, blocking. */
 }
 

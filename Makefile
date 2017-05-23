@@ -4,7 +4,7 @@ LINKFLAGS=-lcurses -pthread
 
 
 run: main
-	$(GCC) -v && ./main
+	./main
 
 
 main: main.o example.o console.o

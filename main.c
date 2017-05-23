@@ -5,4 +5,6 @@
 int main(int argc, char**argv) {
 	exampleRun();
 	printf("done!\n");
+
+	return 0;
 }
