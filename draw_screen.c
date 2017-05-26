@@ -38,7 +38,7 @@ void *draw_screen_run() {
         while (true) {
 
             consoleRefresh();
-            sleep(1);
+            sleepTicks(1);
         }
     }
     printf("In loop. Sleeping for 10 seconds\n");

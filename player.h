@@ -3,7 +3,7 @@
 
 
 
-
+void update_player(int x, int y);
 
 void player_run();
 

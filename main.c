@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include "draw_screen.h" 
 #include "player.h"
-#include "draw_screen.h"
+#include "keyboard.h"
 
 
 #define validate_call(s, error_message) \
@@ -44,6 +44,11 @@ void create_player_thread(thread_ptr screen_thread) {
 	create_thread(screen_thread);
 }
 
+void create_keyboard_thread(thread_ptr keyboard_thread) {
+	keyboard_thread->thread_method = keyboard_run;
+	create_thread(keyboard_thread);
+}
+
 thread_ptr create_thread_object(int thread_number, char *thread_name) {
 	thread_ptr new_thread = malloc(sizeof(struct thread_info));
 	new_thread->thread_num = thread_number;
@@ -61,9 +66,13 @@ int main(int argc, char**argv) {
 	create_draw_screen_thread(screen_thread);
 	thread_ptr player_thread = create_thread_object(2, "player thread");
 	create_player_thread(player_thread);
+	thread_ptr keyboard_thread = create_thread_object(3, "keyboard thread");
+	create_keyboard_thread(keyboard_thread);
 	int s = pthread_join(screen_thread->thread_id, &screen_thread->res);
 	validate_call(s, "pthread_join");
 	s = pthread_join(player_thread->thread_id, &player_thread->res);
+	validate_call(s, "pthread_join");
+	s = pthread_join(keyboard_thread->thread_id, &keyboard_thread->res);
 	validate_call(s, "pthread_join");
 	return 0;
 }
