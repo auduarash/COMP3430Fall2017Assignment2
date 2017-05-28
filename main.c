@@ -7,11 +7,16 @@
 #include "draw_screen.h" 
 #include "player.h"
 #include "keyboard.h"
+#include "upkeep.h"
 
 
 #define validate_call(s, error_message) \
 	if (s != 0) perror(error_message);
 
+
+pthread_mutex_t draw_mutex;
+pthread_mutex_t player_position_mutex;
+pthread_mutex_t player_tile_mutex;
 
 typedef struct thread_info *thread_ptr;
 struct thread_info {
@@ -34,26 +39,12 @@ void create_thread(thread_ptr info) {
 }
 
 
-void create_draw_screen_thread(thread_ptr screen_thread) {
-	screen_thread->thread_method = draw_screen_run;
-	create_thread(screen_thread);
-}
-
-void create_player_thread(thread_ptr screen_thread) {
-	screen_thread->thread_method = player_run;
-	create_thread(screen_thread);
-}
-
-void create_keyboard_thread(thread_ptr keyboard_thread) {
-	keyboard_thread->thread_method = keyboard_run;
-	create_thread(keyboard_thread);
-}
-
-thread_ptr create_thread_object(int thread_number, char *thread_name) {
+thread_ptr create_thread_object(int thread_number, char *thread_name, void *thread_method) {
 	thread_ptr new_thread = malloc(sizeof(struct thread_info));
 	new_thread->thread_num = thread_number;
 	new_thread->thread_name = thread_name;
-	
+	new_thread->thread_method = thread_method;
+	create_thread(new_thread);
 	return new_thread;
 }
 
@@ -62,17 +53,25 @@ thread_ptr create_thread_object(int thread_number, char *thread_name) {
 int main(int argc, char**argv) {
 	// exampleRun();
 	// create_player_thread();
-	thread_ptr screen_thread = create_thread_object(1, "screen refresh thread");
-	create_draw_screen_thread(screen_thread);
-	thread_ptr player_thread = create_thread_object(2, "player thread");
-	create_player_thread(player_thread);
-	thread_ptr keyboard_thread = create_thread_object(3, "keyboard thread");
-	create_keyboard_thread(keyboard_thread);
-	int s = pthread_join(screen_thread->thread_id, &screen_thread->res);
+	int s;
+	pthread_mutex_init(&player_position_mutex, NULL);
+	pthread_mutex_init(&player_tile_mutex, NULL);
+	pthread_mutex_init(&draw_mutex, NULL);
+
+	thread_ptr screen_thread = create_thread_object(1, "screen refresh thread", draw_screen_run);
+	thread_ptr player_thread = create_thread_object(2, "player thread", player_run);
+	thread_ptr keyboard_thread = create_thread_object(3, "keyboard thread", keyboard_run);
+
+	s = pthread_join(screen_thread->thread_id, &screen_thread->res);
 	validate_call(s, "pthread_join");
 	s = pthread_join(player_thread->thread_id, &player_thread->res);
 	validate_call(s, "pthread_join");
 	s = pthread_join(keyboard_thread->thread_id, &keyboard_thread->res);
 	validate_call(s, "pthread_join");
+
+	pthread_mutex_destroy(&player_position_mutex);
+	pthread_mutex_destroy(&player_tile_mutex);
+	pthread_mutex_destroy(&draw_mutex);
+	pthread_exit(NULL);
 	return 0;
 }

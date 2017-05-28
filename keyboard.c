@@ -33,7 +33,7 @@ void *keyboard_run() {
         if (retval == -1) {
             perror("select()");
         } else if (retval) {
-            read(STDIN_FILENO, buf, MAX_BUF);
+            read(STDIN_FILENO, buf, 1);
             switch (buf[0]) {
                 case 'w': {update_player(-1, 0); break;}
                 case 'd': {update_player(0, 1); break;}
@@ -43,6 +43,7 @@ void *keyboard_run() {
             sleepTicks(1);
             // printf("Data is available now. %d %c \n", retval, c);
         } else {
+            //TODO: Do some form of quit or message send to main.
             // printf("No data came in within 5 seconds.\n");
         }
         
