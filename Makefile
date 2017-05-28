@@ -1,5 +1,5 @@
 GCC=gcc-4.8
-CFLAGS=-Wall
+CFLAGS=-Wall -g
 LINKFLAGS=-lcurses -pthread
 
 

@@ -18,16 +18,43 @@ extern pthread_mutex_t player_position_mutex;
 extern pthread_mutex_t player_tile_mutex;
 extern pthread_mutex_t draw_mutex;
 
-int player_position_x = 10;
-int player_position_y = 10;
+int player_position_x = 21;
+int player_position_y = 38;
+int player_max_bound = 21;
+int player_min_bound = 0;
 static int prev_x = 10;
 static int prev_y = 10;
 static int player_current_tile = 0;
 
+
+void set_player_position(int x, int y) {
+    if (x != 0) {
+        if (player_position_x == player_max_bound) {
+            if (x == -1) {
+                player_position_x -= 3;
+            }
+        } else if (player_position_x == player_max_bound - 3) {
+            if (x == 1) {
+                player_position_x += 3;
+            } else {
+                player_position_x += x;
+            }
+        } else if (player_position_x == player_min_bound) {
+            if (x != -1) {
+                player_position_x += x;
+            }
+        } else {
+            player_position_x += x;
+        }
+    } else if (y != 0) {
+        player_position_y += y;
+    }
+} 
+
 void update_player(int x, int y) {
     pthread_mutex_lock(&player_position_mutex);
-    player_position_x += x;
-    player_position_y += y;
+
+    set_player_position(x, y);
 
     pthread_mutex_lock(&player_tile_mutex);
     char **tile = PLAYER_GRAPHIC[player_current_tile];
