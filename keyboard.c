@@ -13,8 +13,11 @@
 
 extern int player_position_x;
 extern int player_position_y;
+extern bool console_ready;
 
 void *keyboard_run() {
+    //Do not listen for events until console has been initialized
+    while ( ! console_ready );
     fd_set rfds;
     struct timeval tv;
     int retval;

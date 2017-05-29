@@ -32,12 +32,14 @@ static char *GAME_BOARD[] = {
 "" };
 extern pthread_mutex_t draw_mutex;
 extern pthread_cond_t wait_for_console;
+extern bool console_ready;
 
 void *draw_screen_run() {
     printf("Starting thread to draw screen. \n");
     printf("Starting console\n");
     pthread_mutex_lock(&draw_mutex);
     if (consoleInit(GAME_ROWS, GAME_COLS, GAME_BOARD)) {
+        console_ready = true;
         pthread_mutex_unlock(&draw_mutex);
         pthread_cond_broadcast(&wait_for_console);
         // int i;
@@ -49,7 +51,7 @@ void *draw_screen_run() {
         }
     } else {
         //We could not init the console. Do something about it
-        
+
     }
     consoleFinish();
 

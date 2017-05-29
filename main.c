@@ -14,6 +14,7 @@
 #define validate_call(s, error_message) \
 	if (s != 0) perror(error_message);
 
+bool console_ready = false;
 
 pthread_mutex_t draw_mutex;
 pthread_mutex_t player_position_mutex;

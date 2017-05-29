@@ -1,6 +1,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include "console.h"
 #include "player.h"
@@ -17,13 +18,14 @@ static char* PLAYER_GRAPHIC[PLAYER_ANIM_TILES][PLAYER_HEIGHT+1] = {
 extern pthread_mutex_t player_position_mutex;
 extern pthread_mutex_t player_tile_mutex;
 extern pthread_mutex_t draw_mutex;
+extern bool console_ready;
 
 int player_position_x = 21;
 int player_position_y = 38;
 int player_max_bound = 21;
 int player_min_bound = 0;
-static int prev_x = 10;
-static int prev_y = 10;
+static int prev_x = 21;
+static int prev_y = 38;
 static int player_current_tile = 0;
 
 
@@ -71,6 +73,9 @@ void update_player(int x, int y) {
 
 
 void player_run() {
+    //Do not start until console has been initialized
+    while ( ! console_ready );
+
     while (true) {
         pthread_mutex_lock(&player_tile_mutex);
         player_current_tile = (player_current_tile + 1) % 2;
