@@ -3,6 +3,13 @@
 
 
 
+typedef struct SINGLE_LOG_ARGS *SingleLogArgs;
+struct SINGLE_LOG_ARGS {
+    int row;
+    int direction;
+    int refresh_ticks;
+};
+
 /*
     Method: single_log_run
     Arguments: log_id
@@ -15,7 +22,10 @@
 
 
 
-void *single_log_run ( int log_id, int direction ) {
+void *single_log_run ( void * args) {
+    SingleLogArgs log_params = (SingleLogArgs) args;
+
+    
     return NULL;
 }
 

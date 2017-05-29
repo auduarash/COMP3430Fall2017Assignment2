@@ -17,6 +17,13 @@ extern pthread_cond_t wait_for_console;
 
 void *log_generator_run(void *arg) {
     int index = *((int *) arg);
+
+    // TODO: Fix up this bad boy
+    while ( true ) {
+
+        
+        sleepTicks(25);
+    }
     char **to_draw = LOG_GRAPHIC;
 
     //Do not start until console has been initialized

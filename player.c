@@ -9,6 +9,8 @@
 
 #define PLAYER_ANIM_TILES 2
 #define PLAYER_HEIGHT 2
+#define FINAL_JUMP_DIFF 3
+#define VERTICAL_JUMP_DIFF 4
 static char* PLAYER_GRAPHIC[PLAYER_ANIM_TILES][PLAYER_HEIGHT+1] = {
   {"@@",
    "<>"},
@@ -23,7 +25,7 @@ extern bool console_ready;
 int player_position_x = 21;
 int player_position_y = 38;
 int player_max_bound = 21;
-int player_min_bound = 0;
+int player_min_bound = 2;
 static int prev_x = 21;
 static int prev_y = 38;
 static int player_current_tile = 0;
@@ -31,22 +33,14 @@ static int player_current_tile = 0;
 
 void set_player_position(int x, int y) {
     if (x != 0) {
-        if (player_position_x == player_max_bound) {
-            if (x == -1) {
-                player_position_x -= 3;
-            }
-        } else if (player_position_x == player_max_bound - 3) {
-            if (x == 1) {
-                player_position_x += 3;
-            } else {
-                player_position_x += x;
-            }
-        } else if (player_position_x == player_min_bound) {
-            if (x != -1) {
-                player_position_x += x;
-            }
+        if (player_position_x <= player_min_bound){
+            
+        } else if (x > 0 && player_position_x == player_max_bound){
+            
+        } else if (x < 0 && player_position_x == 5) {
+            player_position_x += x * FINAL_JUMP_DIFF;
         } else {
-            player_position_x += x;
+            player_position_x += x * VERTICAL_JUMP_DIFF;
         }
     } else if (y != 0) {
         player_position_y += y;
