@@ -12,6 +12,9 @@
         negative representing if the log moves to the right (+ve)
         of to the left (-ve).
 */
+
+
+
 void *single_log_run ( int log_id, int direction ) {
     return NULL;
 }
