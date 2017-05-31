@@ -7,8 +7,8 @@ run: main
 	./main
 
 
-main: main.o console.o draw_screen.o player.o keyboard.o log_generator.o
-	$(GCC) $(CFLAGS) log_generator.o console.o keyboard.o draw_screen.o player.o main.o -o main $(LINKFLAGS)
+main: main.o console.o draw_screen.o player.o keyboard.o log_generator.o common.o
+	$(GCC) $(CFLAGS) common.o log_generator.o console.o keyboard.o draw_screen.o player.o main.o -o main $(LINKFLAGS)
 
 test_list: list.o test_list.o
 	$(GCC) $(CFLAGS) list.o test_list.o -o test_list
@@ -39,6 +39,9 @@ log_generator.o: log_generator.h log_generator.c
 
 single_log.o: single_log.h single_log.c
 	$(GCC) $(CFLAGS) -c single_log.c
+
+common.o: common.h common.c
+	$(GCC) $(CFLAGS) -c common.c
 
 clean:
 	rm -rf main *.o test_list
