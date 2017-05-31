@@ -33,14 +33,13 @@ void *log_generator_run(void *arg) {
     int index = param->index;
     thread_ptr log_thread = create_thread_object(1, "Log thread", single_log_run, NULL);
     int s;
-    SingleLogArgs args;
-    char **to_draw = LOG_GRAPHIC;
 
     //Do not start until console has been initialized
     while ( ! console_ready );
-    pthread_mutex_lock(&draw_mutex);
-    consoleDrawImage(4 + index * 4, 0, to_draw, 4);
-    pthread_mutex_unlock(&draw_mutex);
+    s = pthread_join(log_thread->thread_id, NULL);
+    validate_call(s, "pthread_join");
+
+    pthread_exit(NULL);
 
     return NULL;
 }

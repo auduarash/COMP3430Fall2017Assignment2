@@ -22,12 +22,7 @@ struct SINGLE_LOG_ARGS {
 
 
 
-void *single_log_run ( void * args) {
-    SingleLogArgs log_params = (SingleLogArgs) args;
-
-    
-    return NULL;
-}
+void *single_log_run ( void * args);
 
 
 #endif
