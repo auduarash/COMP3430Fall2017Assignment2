@@ -36,5 +36,9 @@ bool remove_item(LinkedList list, Log data);
 
 void print_items(LinkedList list);
 
+Log remove_front(LinkedList list);
+
+bool is_empty(LinkedList list);
+
 
 #endif

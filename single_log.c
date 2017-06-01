@@ -1,8 +1,10 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
+#include <stdio.h>
 #include "list.h"
 #include "console.h"
+#include "upkeep.h"
 #include "single_log.h"
 
 #define LOG_OFFSET 5
@@ -41,19 +43,19 @@ void move_log( Log log ) {
     sleepTicks(log->frequency);
 }
 
+void set_new_log_params(Log log, int row ) {
+    log->x_location = 0;
+    log->y_location = 4 * row + 4;
+    log->player_on_log = false;
+    log->direction = (row % 2) ? 1 : -1;
+    log->frequency = 20 / (row + 1);
+}
+
 
 void * single_log_run( void * args ) {
     SingleLogArgs log_params = (SingleLogArgs) args;
-    Log log = malloc(sizeof(struct LOG));
-
-    //TODO: Change this to a random value or something based on direction
-    log->x_location = 0; 
-    log->y_location = 4 * log_params->row + 4;
-    log->player_on_log = false;
-    log->direction = (log_params->row % 2) ? 1 : -1;
-    log->frequency = 20 / (log_params->row + 1);
-    log->animation = 0;
-
+    Log log = get_new_log();
+    set_new_log_params(log, log_params->row);
 
     while ( true ) {
         move_log(log);

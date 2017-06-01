@@ -66,8 +66,22 @@ void print_items(LinkedList list) {
         return;
     Node curr = list->top;
     while (curr != NULL ) {
-        printf(" < %d > | ", curr->data);
+        printf(" < %d > | ", curr->data->x_location);
         curr = curr->next;
     }
     printf("\n");
+}
+
+Log remove_front(LinkedList list ) {
+    if (list == NULL || list->top == NULL) {
+        return NULL;
+    }
+    Log front = list->top->data;
+    list->top = list->top->next;
+    return front;
+}
+
+
+bool is_empty(LinkedList list) {
+    return list == NULL || list->top == NULL;
 }

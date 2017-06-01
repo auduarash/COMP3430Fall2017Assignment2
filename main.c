@@ -37,6 +37,7 @@ int main(int argc, char**argv) {
 	thread_ptr screen_thread = create_thread_object(1, "screen refresh thread", draw_screen_run, NULL);
 	thread_ptr player_thread = create_thread_object(2, "player thread", player_run, NULL);
 	thread_ptr keyboard_thread = create_thread_object(3, "keyboard thread", keyboard_run, NULL);
+	thread_ptr upkeep_thread = create_thread_object(4, "upkeep thread", upkeep_run, NULL);
 
 	thread_ptr log_generator_threads[4];
 	/* We need an array of indices since we will be passing the pointers as arguments*/
@@ -52,6 +53,8 @@ int main(int argc, char**argv) {
 	s = pthread_join(player_thread->thread_id, &(player_thread->res));
 	validate_call(s, "pthread_join");
 	s = pthread_join(keyboard_thread->thread_id, &(keyboard_thread->res));
+	validate_call(s, "pthread_join");
+	s = pthread_join(upkeep_thread->thread_id, &(upkeep_thread->res));
 	validate_call(s, "pthread_join");
 	for (log_index = 0; log_index < 4; log_index++) {
 		thread_ptr curr = log_generator_threads[log_index];

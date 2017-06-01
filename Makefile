@@ -6,8 +6,8 @@ LINKFLAGS=-lcurses -pthread
 run: main
 	./main
 
-main: main.o console.o single_log.o draw_screen.o player.o keyboard.o log_generator.o common.o
-	$(GCC) $(CFLAGS) common.o single_log.o log_generator.o console.o keyboard.o draw_screen.o player.o main.o -o main $(LINKFLAGS)
+main: main.o console.o single_log.o draw_screen.o player.o keyboard.o log_generator.o common.o upkeep.o list.o
+	$(GCC) $(CFLAGS) list.o upkeep.o common.o single_log.o log_generator.o console.o keyboard.o draw_screen.o player.o main.o -o main $(LINKFLAGS)
 
 test_list: list.o test_list.o
 	$(GCC) $(CFLAGS) list.o test_list.o -o test_list
