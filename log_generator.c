@@ -6,12 +6,6 @@
 #include "log_generator.h"
 #include "console.h"
 
-static char *LOG_GRAPHIC[4] = {
-        "/======================\\",
-        "",
-        "",
-        "\\======================/"
-};
 extern bool console_ready;
 extern pthread_mutex_t draw_mutex;
 extern pthread_cond_t wait_for_console;
@@ -31,7 +25,11 @@ void *log_generator_run(void *arg) {
         //TODO: Exit the thread here
     }
     int index = param->index;
-    thread_ptr log_thread = create_thread_object(1, "Log thread", single_log_run, NULL);
+    SingleLogArgs s_args = malloc(sizeof(struct SINGLE_LOG_ARGS));
+    s_args->row = index;
+    s_args->direction = 1;
+    s_args->refresh_ticks = 25;
+    thread_ptr log_thread = create_thread_object(1, "Log thread", single_log_run, s_args);
     int s;
 
     //Do not start until console has been initialized

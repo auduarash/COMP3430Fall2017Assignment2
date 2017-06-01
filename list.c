@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include "list.h"
 
-Node create_node(int data, Node next) {
+Node create_node(Log data, Node next) {
     Node newNode = malloc(sizeof( struct NODE ));
     if (newNode != NULL) {
         newNode->data = data;
@@ -23,7 +23,7 @@ LinkedList create_linked_list() {
     return list;
 }
 
-bool add_item(LinkedList list, int data) {
+bool add_item(LinkedList list, Log data) {
     bool success = false;
     if ( list != NULL ) {
         Node newNode = create_node(data, list->top);
@@ -35,7 +35,7 @@ bool add_item(LinkedList list, int data) {
     return success;
 }
 
-bool remove_item(LinkedList list, int data) {
+bool remove_item(LinkedList list, Log data) {
     bool success = false;
     if ( list != NULL && list->top != NULL ) {
         Node curr = list->top;
