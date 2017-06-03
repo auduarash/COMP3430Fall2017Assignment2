@@ -11,6 +11,7 @@
 #include "player.h"
 
 #define LOG_OFFSET 5
+#define LOG_LENGTH 24
 
 static char *top = "/======================\\";
 static char *bottom = "\\======================/";
@@ -38,16 +39,17 @@ void move_log( Log log ) {
     pthread_mutex_lock(&draw_mutex);
     
     //clear the top bar
-    consoleClearImage(top_bar, old_column, 1, strlen(top));
+    consoleClearImage(top_bar, old_column, 1, LOG_LENGTH);
     consoleDrawImage(top_bar, old_column+log->direction, &top, 1);
     
     //clear the bottom bar
-    consoleClearImage(bottom_bar, old_column, 1, strlen(bottom));
+    consoleClearImage(bottom_bar, old_column, 1, LOG_LENGTH);
     consoleDrawImage(bottom_bar, old_column+log->direction, &bottom, 1);
 
     pthread_mutex_unlock(&draw_mutex);
     log->column_index += log->direction;
-    if (log->direction < 0 && log->column_index < -strlen(top)) {
+    
+    if (log->direction < 0 && log->column_index < - LOG_LENGTH  ) {
         delete_log(log);
         pthread_exit(NULL);
     } else if (log->direction > 0 && log->column_index >= GAME_COLS) {
@@ -57,12 +59,12 @@ void move_log( Log log ) {
     sleepTicks(log->frequency);
 }
 
-void set_new_log_params(Log log, int row ) {
+void set_new_log_params(Log log, int row, int direction ) {
     log->row = row;
-    log->column_index = 0;
+    log->column_index = (direction < 0) ? GAME_COLS : -LOG_LENGTH;
     log->row_index = 4 * row + 4;
     log->player_on_log = false;
-    log->direction = (row % 2) ? 1 : -1;
+    log->direction = direction;
     log->frequency = 20 / (row + 1);
 }
 
@@ -70,7 +72,7 @@ void set_new_log_params(Log log, int row ) {
 void * single_log_run( void * args ) {
     SingleLogArgs log_params = (SingleLogArgs) args;
     Log log = get_new_log();
-    set_new_log_params(log, log_params->row);
+    set_new_log_params(log, log_params->row, log_params->direction);
 
     while ( true ) {
         move_log(log);

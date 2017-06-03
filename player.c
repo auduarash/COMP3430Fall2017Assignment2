@@ -91,6 +91,12 @@ void verify_player_position() {
         default: {
             int row = (player_row - 5) / 4;
             bool player_found_log = place_player_on_log(row, player_column);
+
+            if ( ! player_found_log ) {
+
+                //TODO: End the game or something
+
+            }
         }
     }
 }

@@ -27,17 +27,22 @@ void *log_generator_run(void *arg) {
     int index = param->index;
     SingleLogArgs s_args = malloc(sizeof(struct SINGLE_LOG_ARGS));
     s_args->row = index;
-    s_args->direction = 1;
+    s_args->direction = (index % 2) ? 1 : -1;
     s_args->refresh_ticks = 25;
-    thread_ptr log_thread = create_thread_object(1, "Log thread", single_log_run, s_args);
-    int s;
 
-    //Do not start until console has been initialized
-    while ( ! console_ready );
-    s = pthread_join(log_thread->thread_id, NULL);
-    validate_call(s, "pthread_join");
+    while ( true ) {
+        thread_ptr log_thread = create_thread_object(1, "Log thread", single_log_run, s_args);
+        int s;
 
+        //Do not start until console has been initialized
+        while ( ! console_ready );
+        s = pthread_join(log_thread->thread_id, NULL);
+        validate_call(s, "pthread_join");
+
+        sleepTicks(10);
+    }
     pthread_exit(NULL);
+        
 
     return NULL;
 }
