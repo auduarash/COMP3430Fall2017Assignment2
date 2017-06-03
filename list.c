@@ -66,7 +66,7 @@ void print_items(LinkedList list) {
         return;
     Node curr = list->top;
     while (curr != NULL ) {
-        printf(" < %d > | ", curr->data->x_location);
+        printf(" < %d > | ", curr->data->row_index);
         curr = curr->next;
     }
     printf("\n");

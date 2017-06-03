@@ -7,4 +7,8 @@ void *upkeep_run();
 
 Log get_new_log();
 
+void delete_log(Log log);
+
+bool place_player_on_log(int row, int player_y_position);
+
 #endif

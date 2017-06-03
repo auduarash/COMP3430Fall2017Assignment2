@@ -16,9 +16,10 @@ struct NODE {
     Log data;
 };
 struct LOG {
+    int id;
     int row;
-    int x_location; // current x location of the log
-    int y_location; // the current y location of the log
+    int row_index; // current x location of the log
+    int column_index; // the current y location of the log
     int direction; //is the log heading east or west
     int frequency; //how fast is the log moving per frame
     bool player_on_log; // is the player currently on this log

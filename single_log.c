@@ -2,10 +2,13 @@
 #include <pthread.h>
 #include <string.h>
 #include <stdio.h>
+#include "draw_screen.h"
 #include "list.h"
 #include "console.h"
 #include "upkeep.h"
 #include "single_log.h"
+#include "upkeep.h"
+#include "player.h"
 
 #define LOG_OFFSET 5
 
@@ -26,26 +29,38 @@ extern pthread_mutex_t draw_mutex;
 */
 
 void move_log( Log log ) {
-    int old_x = log->x_location;
-    int top_bar = log->y_location;
+    int old_column = log->column_index;
+    int top_bar = log->row_index;
     int bottom_bar = top_bar + 3;
+    if (log->player_on_log) {
+        update_player(0, log->direction);
+    }
     pthread_mutex_lock(&draw_mutex);
     
     //clear the top bar
-    consoleClearImage(top_bar, old_x, 1, strlen(top));
-    consoleDrawImage(top_bar, old_x+log->direction, &top, 1);
+    consoleClearImage(top_bar, old_column, 1, strlen(top));
+    consoleDrawImage(top_bar, old_column+log->direction, &top, 1);
     
     //clear the bottom bar
-    consoleClearImage(bottom_bar, old_x, 1, strlen(bottom));
-    consoleDrawImage(bottom_bar, old_x+log->direction, &bottom, 1);
+    consoleClearImage(bottom_bar, old_column, 1, strlen(bottom));
+    consoleDrawImage(bottom_bar, old_column+log->direction, &bottom, 1);
+
     pthread_mutex_unlock(&draw_mutex);
-    log->x_location += log->direction;
+    log->column_index += log->direction;
+    if (log->direction < 0 && log->column_index < -strlen(top)) {
+        delete_log(log);
+        pthread_exit(NULL);
+    } else if (log->direction > 0 && log->column_index >= GAME_COLS) {
+        delete_log(log);
+        pthread_exit(NULL);
+    }
     sleepTicks(log->frequency);
 }
 
 void set_new_log_params(Log log, int row ) {
-    log->x_location = 0;
-    log->y_location = 4 * row + 4;
+    log->row = row;
+    log->column_index = 0;
+    log->row_index = 4 * row + 4;
     log->player_on_log = false;
     log->direction = (row % 2) ? 1 : -1;
     log->frequency = 20 / (row + 1);

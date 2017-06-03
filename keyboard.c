@@ -11,8 +11,8 @@
 
 #define MAX_BUF 1024
 
-extern int player_position_x;
-extern int player_position_y;
+extern int player_row;
+extern int player_column;
 extern bool console_ready;
 
 void *keyboard_run() {

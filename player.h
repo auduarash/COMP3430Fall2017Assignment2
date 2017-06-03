@@ -7,5 +7,7 @@ void update_player(int x, int y);
 
 void player_run();
 
+void verify_player_position();
+
 
 #endif
