@@ -65,7 +65,7 @@ void set_new_log_params(Log log, int row, int direction ) {
     log->row_index = 4 * row + 4;
     log->player_on_log = false;
     log->direction = direction;
-    log->frequency = 20 / (row + 1);
+    log->frequency = 10 / (5 - row);
 }
 
 
