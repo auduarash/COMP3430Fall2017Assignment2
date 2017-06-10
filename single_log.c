@@ -15,6 +15,12 @@
 
 static char *top = "/======================\\";
 static char *bottom = "\\======================/";
+static char *animations[][4] = {
+    {"|", "|", "|", "|"},
+    {"|", "-", "|", "+"},
+    {"-", "|", "+", "|"}
+};
+static int current_log_animation = 0;
 
 
 extern pthread_mutex_t draw_mutex;
@@ -46,6 +52,19 @@ void move_log( Log log ) {
     consoleClearImage(bottom_bar, old_column, 1, LOG_LENGTH);
     consoleDrawImage(bottom_bar, old_column+log->direction, &bottom, 1);
 
+    consoleClearImage(top_bar+1, old_column, 1, 1);
+    consoleDrawImage(top_bar+1, old_column+log->direction, &animations[current_log_animation][0], 1);
+    
+    consoleClearImage(top_bar+1, old_column + LOG_LENGTH - 1, 1, 1);
+    consoleDrawImage(top_bar+1, old_column+log->direction + LOG_LENGTH - 1, &animations[current_log_animation][2], 1);
+    
+    consoleClearImage(top_bar+2, old_column, 1, 1);
+    consoleDrawImage(top_bar+2, old_column+log->direction, &animations[current_log_animation][1], 1);
+    
+    consoleClearImage(top_bar+2, old_column + LOG_LENGTH-1, 1, 1);
+    consoleDrawImage(top_bar+2, old_column+log->direction+LOG_LENGTH-1, &animations[current_log_animation][3], 1);
+
+    current_log_animation = (current_log_animation + 1) % 3;
     pthread_mutex_unlock(&draw_mutex);
     log->column_index += log->direction;
     

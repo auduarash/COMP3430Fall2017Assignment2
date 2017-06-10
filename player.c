@@ -55,13 +55,20 @@ void set_player_position(int x, int y) {
                 case STAGE_ONE: player_row = STAGE_TWO; break;
                 case STAGE_TWO: player_row = STAGE_THREE; break;
                 case STAGE_THREE: player_row = STAGE_FOUR; break;
-                case STAGE_FOUR: player_row = END_OF_GAME; break;
+                case STAGE_FOUR: {
+                    int player_y_base = player_column % 18;
+                    if (1 <= player_y_base && player_y_base <= 5) {
+                        player_row = END_OF_GAME; 
+                    }
+                    break;
+                }
             }
         }
     } else if (y != 0) {
         int new_y = player_column + y;
-        if (new_y >= 0 && new_y < GAME_COLS-2)
-        player_column = new_y;
+        if (new_y >= 0 && new_y < GAME_COLS-2){
+            player_column = new_y;
+        }
     }
 } 
 
@@ -87,7 +94,9 @@ void update_player(int x, int y) {
 void verify_player_position() {
     switch (player_row) {
         case OUT_OF_BOUNDS: break;
-        case END_OF_GAME: break; //TODO: Make this great again
+        case END_OF_GAME: {
+            break; //TODO: Make this great again
+        }
         default: {
             int row = (player_row - 5) / 4;
             bool player_found_log = place_player_on_log(row, player_column);
@@ -95,7 +104,8 @@ void verify_player_position() {
             if ( ! player_found_log ) {
 
                 //TODO: End the game or something
-
+                //putBanner("Loser Loser Pants for Hire");
+                //disableConsole(true);
             }
         }
     }

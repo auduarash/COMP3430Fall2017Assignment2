@@ -31,21 +31,15 @@ void *log_generator_run(void *arg) {
     s_args->direction = (index % 2) ? 1 : -1;
     s_args->refresh_ticks = 25;
 
-    
-    thread_ptr log_threads[3];
-    int s, i;
-    for (i = 0; i < 3; i++) {
-        log_threads[i] = create_thread_object(1, "Log thread", single_log_run, s_args);
-        sleepTicks(200);
-    }
 
     //Do not start until console has been initialized
     while ( ! console_ready );
-    for (i = 0; i < 3; i++){
-        s = pthread_join(log_threads[i]->thread_id, NULL);
-        validate_call(s, "pthread_join");
+
+    while (true) {
+        create_thread_object(1, "Log thread", single_log_run, s_args);
+        sleepTicks(200);
     }
-    
+
     pthread_exit(NULL);
         
 
