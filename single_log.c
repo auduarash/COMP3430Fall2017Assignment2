@@ -24,6 +24,7 @@ static int current_log_animation = 0;
 
 
 extern pthread_mutex_t draw_mutex;
+extern bool is_game_over;
 
 /*
     move_log - moves the log using appropriate parameters
@@ -93,8 +94,8 @@ void * single_log_run( void * args ) {
     Log log = get_new_log();
     set_new_log_params(log, log_params->row, log_params->direction);
 
-    while ( true ) {
+    while ( ! is_game_over ) {
         move_log(log);
     }
-    return NULL;
+    pthread_exit(NULL);
 }

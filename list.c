@@ -85,3 +85,13 @@ Log remove_front(LinkedList list ) {
 bool is_empty(LinkedList list) {
     return list == NULL || list->top == NULL;
 }
+
+void clear_linked_list(LinkedList list) {
+    Node curr = list->top;
+    while ( curr != NULL ) {
+        Node to_clear = curr;
+        curr = curr->next;
+        free(to_clear->data);
+        free(to_clear);
+    }
+}

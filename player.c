@@ -29,7 +29,6 @@ static char* PLAYER_GRAPHIC[PLAYER_ANIM_TILES][PLAYER_HEIGHT+1] = {
 extern pthread_mutex_t player_position_mutex;
 extern pthread_mutex_t player_tile_mutex;
 extern pthread_mutex_t draw_mutex;
-extern bool console_ready;
 
 static int player_row = 21;
 static int player_column = 38;
@@ -38,6 +37,8 @@ int player_min_bound = 2;
 static int prev_row = 21;
 static int prev_column = 38;
 static int player_current_tile = 0;
+
+extern bool is_game_over;
 
 
 void set_player_position(int x, int y) {
@@ -88,8 +89,8 @@ void update_player(int x, int y) {
     prev_row = player_row;
     prev_column = player_column;
     pthread_mutex_unlock(&draw_mutex);
-    verify_player_position();
     pthread_mutex_unlock(&player_position_mutex);
+    verify_player_position();
 }
 
 void verify_player_position() {
@@ -115,9 +116,8 @@ void verify_player_position() {
 
 void player_run() {
     //Do not start until console has been initialized
-    while ( ! console_ready );
 
-    while (true) {
+    while ( ! is_game_over ) {
         pthread_mutex_lock(&player_tile_mutex);
         player_current_tile = (player_current_tile + 1) % 2;
         pthread_mutex_unlock(&player_tile_mutex);
@@ -125,4 +125,13 @@ void player_run() {
         sleepTicks(50);
     }
 
+}
+
+void reset_player_position() {
+    pthread_mutex_lock(&player_position_mutex);
+    player_row = 21;
+    player_column = 38;
+    prev_row = 21;
+    prev_column = 38;
+    pthread_mutex_unlock(&player_position_mutex);
 }

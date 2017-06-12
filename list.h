@@ -41,5 +41,6 @@ Log remove_front(LinkedList list);
 
 bool is_empty(LinkedList list);
 
+void clear_linked_list(LinkedList list);
 
 #endif

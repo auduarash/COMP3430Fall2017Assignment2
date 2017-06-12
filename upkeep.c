@@ -15,6 +15,9 @@ static int current_log_id = 0;
 static int no_lives = 5;
 static int player_score = 0;
 
+extern bool is_game_over;
+extern pthread_cond_t game_over;
+
 void * upkeep_run () {
     pthread_mutex_init(&active_list_mutex, NULL);
     pthread_mutex_lock(&active_list_mutex);
@@ -23,10 +26,14 @@ void * upkeep_run () {
     pthread_mutex_unlock(&active_list_mutex);
     upkeep_ready = true;
 
-    while (true) {
+    while ( ! is_game_over ) {
 
     }
-    return NULL;
+    pthread_mutex_lock(&active_list_mutex);
+    clear_linked_list(active_logs);
+    clear_linked_list(dead_logs);
+    pthread_mutex_unlock(&active_list_mutex);
+    pthread_exit(NULL);
 }
 
 
@@ -86,11 +93,11 @@ void live_lost() {
     char le_lives = no_lives + '0';
     putString(&le_lives, 0, 42, 1);
     if (no_lives == 0) {
-        
         putString("Game over", 0, 42, 9);
+        pthread_cond_signal(&game_over);
     }
 }
 
-int frog_crossed_pond() {
+void frog_crossed_pond() {
     player_score += 1;
 }

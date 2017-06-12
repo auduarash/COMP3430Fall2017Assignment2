@@ -8,5 +8,7 @@ void player_run();
 
 void verify_player_position();
 
+void reset_player_position();
+
 
 #endif

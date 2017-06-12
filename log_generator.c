@@ -6,9 +6,10 @@
 #include "log_generator.h"
 #include "console.h"
 
-extern bool console_ready;
 extern pthread_mutex_t draw_mutex;
 extern pthread_cond_t wait_for_console;
+
+extern bool is_game_over;
 
 LogGeneratorParam create_log_generator_params(int index) {
     LogGeneratorParam params = malloc(sizeof(struct LOG_GENERATOR_PARAMS));
@@ -32,10 +33,8 @@ void *log_generator_run(void *arg) {
     s_args->refresh_ticks = 25;
 
 
-    //Do not start until console has been initialized
-    while ( ! console_ready );
 
-    while (true) {
+    while ( ! is_game_over ) {
         create_thread_object(1, "Log thread", single_log_run, s_args);
         sleepTicks(200);
     }

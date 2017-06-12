@@ -4,6 +4,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <pthread.h>
 #include "console.h"
 #include "keyboard.h"
 #include "player.h"
@@ -13,19 +14,17 @@
 
 extern int player_row;
 extern int player_column;
-extern bool console_ready;
+
+extern bool is_game_over;
 
 void *keyboard_run() {
-    //Do not listen for events until console has been initialized
-    while ( ! console_ready );
     fd_set rfds;
     struct timeval tv;
     int retval;
 
 
     char buf[MAX_BUF];
-    while (true) {
-
+    while ( ! is_game_over ) {
         tv.tv_sec = 5;
         tv.tv_usec = 0;
         /*Watch stdin for input*/
@@ -49,6 +48,6 @@ void *keyboard_run() {
             //TODO: Do some form of quit or message send to main.
             // printf("No data came in within 5 seconds.\n");
         }
-        
     }
+    pthread_exit(NULL);
 }

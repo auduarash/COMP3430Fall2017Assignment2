@@ -32,29 +32,21 @@ static char *GAME_BOARD[] = {
 "" };
 extern pthread_mutex_t draw_mutex;
 extern pthread_cond_t wait_for_console;
-extern bool console_ready;
+extern bool is_game_over;
 
 void *draw_screen_run() {
-    printf("Starting thread to draw screen. \n");
-    printf("Starting console\n");
     pthread_mutex_lock(&draw_mutex);
     if (consoleInit(GAME_ROWS, GAME_COLS, GAME_BOARD)) {
-        console_ready = true;
         pthread_mutex_unlock(&draw_mutex);
         // int i;
-        while (true) {
+        while (! is_game_over ) {
             pthread_mutex_lock(&draw_mutex);
             consoleRefresh();
             pthread_mutex_unlock(&draw_mutex);
             sleepTicks(1);
         }
-    } else {
-        //We could not init the console. Do something about it
-
     }
+    finalKeypress();
     consoleFinish();
-
-
-    printf("Done with the draw screen thread. \n");
-    return "done draw_screen";
+    pthread_exit(NULL);;
 }

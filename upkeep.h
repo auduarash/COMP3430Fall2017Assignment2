@@ -13,6 +13,6 @@ bool place_player_on_log(int row, int player_y_position);
 
 void live_lost();
 
-int frog_crossed_pond();
+void frog_crossed_pond();
 
 #endif
