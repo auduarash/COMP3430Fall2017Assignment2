@@ -11,4 +11,8 @@ void delete_log(Log log);
 
 bool place_player_on_log(int row, int player_y_position);
 
+void live_lost();
+
+int frog_crossed_pond();
+
 #endif

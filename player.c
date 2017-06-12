@@ -72,11 +72,11 @@ void set_player_position(int x, int y) {
     }
 } 
 
+
 void update_player(int x, int y) {
     pthread_mutex_lock(&player_position_mutex);
 
     set_player_position(x, y);
-    verify_player_position();
 
     pthread_mutex_lock(&player_tile_mutex);
     char **tile = PLAYER_GRAPHIC[player_current_tile];
@@ -88,6 +88,7 @@ void update_player(int x, int y) {
     prev_row = player_row;
     prev_column = player_column;
     pthread_mutex_unlock(&draw_mutex);
+    verify_player_position();
     pthread_mutex_unlock(&player_position_mutex);
 }
 
@@ -95,6 +96,9 @@ void verify_player_position() {
     switch (player_row) {
         case OUT_OF_BOUNDS: break;
         case END_OF_GAME: {
+            place_player_on_log(5, 0);
+            frog_crossed_pond();
+            reset_player_position();
             break; //TODO: Make this great again
         }
         default: {
@@ -102,10 +106,8 @@ void verify_player_position() {
             bool player_found_log = place_player_on_log(row, player_column);
 
             if ( ! player_found_log ) {
-
-                //TODO: End the game or something
-                //putBanner("Loser Loser Pants for Hire");
-                //disableConsole(true);
+                live_lost();
+                reset_player_position();
             }
         }
     }

@@ -12,6 +12,8 @@ static LinkedList dead_logs;
 static bool upkeep_ready = false;
 static pthread_mutex_t active_list_mutex;
 static int current_log_id = 0;
+static int no_lives = 5;
+static int player_score = 0;
 
 void * upkeep_run () {
     pthread_mutex_init(&active_list_mutex, NULL);
@@ -76,4 +78,19 @@ bool place_player_on_log(int row, int column) {
     }
     pthread_mutex_unlock(&active_list_mutex);
     return placed;
+}
+
+
+void live_lost() {
+    no_lives -= 1;
+    char le_lives = no_lives + '0';
+    putString(&le_lives, 0, 42, 1);
+    if (no_lives == 0) {
+        
+        putString("Game over", 0, 42, 9);
+    }
+}
+
+int frog_crossed_pond() {
+    player_score += 1;
 }

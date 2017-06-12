@@ -41,7 +41,6 @@ void *draw_screen_run() {
     if (consoleInit(GAME_ROWS, GAME_COLS, GAME_BOARD)) {
         console_ready = true;
         pthread_mutex_unlock(&draw_mutex);
-        pthread_cond_broadcast(&wait_for_console);
         // int i;
         while (true) {
             pthread_mutex_lock(&draw_mutex);
