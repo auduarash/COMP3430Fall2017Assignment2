@@ -1,3 +1,12 @@
+/*
+
+@author: Abdul-Rasheed Audu
+@course: COMP 3430 - Operating Systems
+@title: main.c
+@purpose: Starts up all threads in the program
+
+*/
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,24 +44,28 @@ int main(int argc, char**argv) {
 	pthread_cond_init(&game_over, NULL);
 
 	thread_ptr all_threads[8];
-	all_threads[0] = create_thread_object(1, "screen refresh thread", draw_screen_run, NULL);
-	all_threads[1]  =  create_thread_object(2, "player thread", player_run, NULL);
-	all_threads[2]  = create_thread_object(3, "keyboard thread", keyboard_run, NULL);
-	all_threads[3]  = create_thread_object(4, "upkeep thread", upkeep_run, NULL);
+	all_threads[0] = create_thread_object(draw_screen_run, NULL);
+	all_threads[1]  =  create_thread_object(player_run, NULL);
+	all_threads[2]  = create_thread_object(keyboard_run, NULL);
+	all_threads[3]  = create_thread_object(upkeep_run, NULL);
 
 	/* We need an array of indices since we will be passing the pointers as arguments*/
 	int log_index;
 	for (log_index = 0; log_index < 4; log_index++) {
 		LogGeneratorParam params = create_log_generator_params(log_index);
-		all_threads[4+log_index] = create_thread_object(4+log_index, "log generator thread", log_generator_run, params);
+		all_threads[4+log_index] = create_thread_object(log_generator_run, params);
 	}
-
 	pthread_cond_wait(&game_over, &draw_mutex);
 	is_game_over = true;
 	int thread_number = 0;
-	for (thread_number = 0; thread_number < 8; thread_number++) {
-		pthread_join(all_threads[7-thread_number]->thread_id, NULL);
+	for (thread_number = 7; thread_number >= 0; thread_number--) {
+		//printf("Joining thread %d\n", thread_number);
+		pthread_join(all_threads[thread_number]->thread_id, NULL);
+		//printf("Joined thread %d\n", thread_number);
 	}
+	//printf("Cleaning up\n");
+	clean_up();
+	//printf("Cleaned up\n");
 	pthread_mutex_destroy(&player_position_mutex);
 	pthread_mutex_destroy(&player_tile_mutex);
 	pthread_mutex_destroy(&draw_mutex);

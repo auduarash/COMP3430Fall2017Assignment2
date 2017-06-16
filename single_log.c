@@ -1,7 +1,18 @@
+/*
+
+@author: Abdul-Rasheed Audu
+@course: COMP 3430 - Operating Systems
+@title: single_log.c
+@purpose: Logic for the movement
+    and animation of a single log moving across the screen
+
+*/
+
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
 #include <stdio.h>
+#include "common.h"
 #include "draw_screen.h"
 #include "list.h"
 #include "console.h"
@@ -18,9 +29,12 @@ static char *bottom = "\\======================/";
 static char *animations[][4] = {
     {"|", "|", "|", "|"},
     {"|", "-", "|", "+"},
-    {"-", "|", "+", "|"}
+    {"-", "|", "+", "|"},
+    {"-", "-", "+", "+"}
 };
-static int current_log_animation = 0;
+static int top_x_animation[] = {4, 8, 12, 16};
+static int bottom_x_animation[] = {1, 13, 8, 20};
+static char *x_animation = "X";
 
 
 extern pthread_mutex_t draw_mutex;
@@ -54,48 +68,72 @@ void move_log( Log log ) {
     consoleDrawImage(bottom_bar, old_column+log->direction, &bottom, 1);
 
     consoleClearImage(top_bar+1, old_column, 1, 1);
-    consoleDrawImage(top_bar+1, old_column+log->direction, &animations[current_log_animation][0], 1);
+    consoleDrawImage(top_bar+1, old_column+log->direction, &animations[log->animation][0], 1);
     
     consoleClearImage(top_bar+1, old_column + LOG_LENGTH - 1, 1, 1);
-    consoleDrawImage(top_bar+1, old_column+log->direction + LOG_LENGTH - 1, &animations[current_log_animation][2], 1);
+    consoleDrawImage(top_bar+1, old_column+log->direction + LOG_LENGTH - 1, &animations[log->animation][2], 1);
     
     consoleClearImage(top_bar+2, old_column, 1, 1);
-    consoleDrawImage(top_bar+2, old_column+log->direction, &animations[current_log_animation][1], 1);
+    consoleDrawImage(top_bar+2, old_column+log->direction, &animations[log->animation][1], 1);
     
     consoleClearImage(top_bar+2, old_column + LOG_LENGTH-1, 1, 1);
-    consoleDrawImage(top_bar+2, old_column+log->direction+LOG_LENGTH-1, &animations[current_log_animation][3], 1);
+    consoleDrawImage(top_bar+2, old_column+log->direction+LOG_LENGTH-1, &animations[log->animation][3], 1);
 
-    current_log_animation = (current_log_animation + 1) % 3;
+    consoleClearImage(top_bar+1, old_column + top_x_animation[log->prev_animation], 1, 1);
+    consoleDrawImage(top_bar+1, old_column + log->direction + top_x_animation[log->animation], &x_animation, 1);
+    
+    consoleClearImage(top_bar+2, old_column + bottom_x_animation[log->prev_animation], 1, 1);
+    consoleDrawImage(top_bar+2, old_column + log->direction + bottom_x_animation[log->animation], &x_animation, 1);
+    log->prev_animation = log->animation;
+    
+
     pthread_mutex_unlock(&draw_mutex);
     log->column_index += log->direction;
     
     if (log->direction < 0 && log->column_index < - LOG_LENGTH  ) {
         delete_log(log);
-        pthread_exit(NULL);
     } else if (log->direction > 0 && log->column_index >= GAME_COLS) {
         delete_log(log);
-        pthread_exit(NULL);
     }
-    sleepTicks(log->frequency);
 }
 
 void set_new_log_params(Log log, int row, int direction ) {
+    log->is_alive = true;
     log->row = row;
     log->column_index = (direction < 0) ? GAME_COLS : -LOG_LENGTH;
     log->row_index = 4 * row + 4;
     log->player_on_log = false;
     log->direction = direction;
     log->frequency = 10 / (5 - row);
+    log->animation = log->prev_animation = 0;
+
 }
 
+void *update_thread_anim(void *arg) {
+    Log log = (Log) arg;
+    while ( log->is_alive ) {
+        pthread_mutex_lock(&draw_mutex);
+        log->animation = (log->animation + 1 ) % 4;
+        pthread_mutex_unlock(&draw_mutex);
+        sleepTicks(50);
+    }
+    printf("Exiting update\n");
+    pthread_exit(NULL);
+}
 
 void * single_log_run( void * args ) {
     SingleLogArgs log_params = (SingleLogArgs) args;
     Log log = get_new_log();
     set_new_log_params(log, log_params->row, log_params->direction);
 
-    while ( ! is_game_over ) {
+    thread_ptr update_thread = create_thread_object(update_thread_anim, log);
+    while ( ! is_game_over && log->is_alive ) {
         move_log(log);
+        sleepTicks(log->frequency);
     }
+    printf("Joining refresh thread\n");
+    pthread_join(update_thread->thread_id, NULL);
+    printf("Leaving single log\n");
+    free(update_thread);
     pthread_exit(NULL);
 }

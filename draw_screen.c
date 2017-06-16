@@ -1,3 +1,12 @@
+/*
+
+@author: Abdul-Rasheed Audu
+@course: COMP 3430 - Operating Systems
+@title: draW_screen.c
+@purpose: Screen refresh thread.
+
+*/
+
 #include <unistd.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -45,8 +54,8 @@ void *draw_screen_run() {
             pthread_mutex_unlock(&draw_mutex);
             sleepTicks(1);
         }
+        finalKeypress();
+        consoleFinish();
     }
-    finalKeypress();
-    consoleFinish();
     pthread_exit(NULL);;
 }

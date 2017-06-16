@@ -1,3 +1,5 @@
+
+
 #ifndef SINGLE_LOG_C
 #define SINGLE_LOG_C
 

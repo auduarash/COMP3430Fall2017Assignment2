@@ -9,16 +9,13 @@
 typedef struct THREADINFO *thread_ptr;
 struct THREADINFO {
 	pthread_t thread_id;
-	int thread_num;
-	char *thread_name;
 	void *thread_method;
-	void *res;
 	void *thread_arg;
 };
 
 void create_thread(thread_ptr info);
 
-thread_ptr create_thread_object(int thread_number, char *thread_name, void *thread_method, void *arg);
+thread_ptr create_thread_object(void *thread_method, void *arg);
 
 
 #endif

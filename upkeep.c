@@ -1,8 +1,22 @@
+/*
+
+@author: Abdul-Rasheed Audu
+@course: COMP 3430 - Operating Systems
+@title: single_log.c
+@purpose: Handles memory allocated for linked lists. Creates and deletes and 
+    reuses linked lists as required.
+
+*/
+
+
 #include <stdlib.h>
 #include <pthread.h>
+#include <stdio.h>
 #include "console.h"
 #include "list.h"
 #include "upkeep.h"
+#include "player.h"
+
 
 /*
     Upkeep helps handle memory for objects that come and go as the program progresses
@@ -12,7 +26,7 @@ static LinkedList dead_logs;
 static bool upkeep_ready = false;
 static pthread_mutex_t active_list_mutex;
 static int current_log_id = 0;
-static int no_lives = 5;
+static int no_lives = 1;
 static int player_score = 0;
 
 extern bool is_game_over;
@@ -27,15 +41,17 @@ void * upkeep_run () {
     upkeep_ready = true;
 
     while ( ! is_game_over ) {
-
     }
+    printf("Ending upkeep thread\n");
+    pthread_exit(NULL);
+}
+
+void clean_up() {
     pthread_mutex_lock(&active_list_mutex);
     clear_linked_list(active_logs);
     clear_linked_list(dead_logs);
     pthread_mutex_unlock(&active_list_mutex);
-    pthread_exit(NULL);
 }
-
 
 Log get_new_log() {
     while ( ! upkeep_ready ) {
@@ -61,13 +77,16 @@ Log get_new_log() {
 void delete_log(Log expired) {
     bool success = false;
     pthread_mutex_lock(&active_list_mutex);
+    expired->is_alive = false;
     success = remove_item(active_logs, expired);
 
     pthread_mutex_unlock(&active_list_mutex);
     if (success) {
         pthread_mutex_lock(&active_list_mutex);
         add_item(dead_logs, expired);
+        pthread_join(expired->thread_id, NULL);
         pthread_mutex_unlock(&active_list_mutex);
+
     }
 }
 
@@ -92,12 +111,15 @@ void live_lost() {
     no_lives -= 1;
     char le_lives = no_lives + '0';
     putString(&le_lives, 0, 42, 1);
-    if (no_lives == 0) {
+    if (no_lives <= 0) {
         putString("Game over", 0, 42, 9);
         pthread_cond_signal(&game_over);
+    } else {
+        reset_player_position();
     }
 }
 
 void frog_crossed_pond() {
     player_score += 1;
+    reset_player_position();
 }

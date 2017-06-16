@@ -1,3 +1,12 @@
+/*
+
+@author: Abdul-Rasheed Audu
+@course: COMP 3430 - Operating Systems
+@title: player.c
+@purpose: In charge of handling the frog's movements
+
+*/
+
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -8,6 +17,7 @@
 #include "player.h"
 #include "shared.h"
 #include "upkeep.h"
+#include "common.h"
 
 #define PLAYER_ANIM_TILES 2
 #define PLAYER_HEIGHT 2
@@ -29,16 +39,13 @@ static char* PLAYER_GRAPHIC[PLAYER_ANIM_TILES][PLAYER_HEIGHT+1] = {
 extern pthread_mutex_t player_position_mutex;
 extern pthread_mutex_t player_tile_mutex;
 extern pthread_mutex_t draw_mutex;
+extern bool is_game_over;
 
 static int player_row = 21;
 static int player_column = 38;
-int player_max_bound = 21;
-int player_min_bound = 2;
 static int prev_row = 21;
 static int prev_column = 38;
 static int player_current_tile = 0;
-
-extern bool is_game_over;
 
 
 void set_player_position(int x, int y) {
@@ -60,6 +67,7 @@ void set_player_position(int x, int y) {
                     int player_y_base = player_column % 18;
                     if (1 <= player_y_base && player_y_base <= 5) {
                         player_row = END_OF_GAME; 
+                        place_player_on_log(5, 0);
                     }
                     break;
                 }
@@ -90,17 +98,14 @@ void update_player(int x, int y) {
     prev_column = player_column;
     pthread_mutex_unlock(&draw_mutex);
     pthread_mutex_unlock(&player_position_mutex);
-    verify_player_position();
 }
 
 void verify_player_position() {
     switch (player_row) {
         case OUT_OF_BOUNDS: break;
         case END_OF_GAME: {
-            place_player_on_log(5, 0);
             frog_crossed_pond();
-            reset_player_position();
-            break; //TODO: Make this great again
+            break;
         }
         default: {
             int row = (player_row - 5) / 4;
@@ -108,22 +113,31 @@ void verify_player_position() {
 
             if ( ! player_found_log ) {
                 live_lost();
-                reset_player_position();
             }
         }
     }
 }
 
-void player_run() {
-    //Do not start until console has been initialized
-
+void *player_anim() {
     while ( ! is_game_over ) {
         pthread_mutex_lock(&player_tile_mutex);
         player_current_tile = (player_current_tile + 1) % 2;
         pthread_mutex_unlock(&player_tile_mutex);
-        update_player(0, 0);
         sleepTicks(50);
     }
+    pthread_exit(NULL);
+}
+
+void player_run() {
+    //Do not start until console has been initialized
+    thread_ptr player_update_thread = create_thread_object(player_anim, NULL );
+    while ( ! is_game_over ) {
+        update_player(0, 0);
+        sleepTicks(10);
+        verify_player_position();
+    }
+    pthread_join(player_update_thread->thread_id, NULL);
+    pthread_exit(NULL);
 
 }
 
@@ -134,4 +148,7 @@ void reset_player_position() {
     prev_row = 21;
     prev_column = 38;
     pthread_mutex_unlock(&player_position_mutex);
+    disableConsole(true);
+    sleepTicks(200);
+    disableConsole(false);
 }

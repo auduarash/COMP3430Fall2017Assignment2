@@ -1,3 +1,11 @@
+/*
+
+@author: Abdul-Rasheed Audu
+@course: COMP 3430 - Operating Systems
+@title: log_generator.c
+@purpose: Thread that generates logs on a specified row.
+
+*/
 #include <stdlib.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -24,7 +32,7 @@ LogGeneratorParam create_log_generator_params(int index) {
 void *log_generator_run(void *arg) {
     LogGeneratorParam param = (LogGeneratorParam) arg;
     if (param == NULL) {
-        //TODO: Exit the thread here
+        pthread_exit(NULL);
     }
     int index = param->index;
     SingleLogArgs s_args = malloc(sizeof(struct SINGLE_LOG_ARGS));
@@ -35,12 +43,9 @@ void *log_generator_run(void *arg) {
 
 
     while ( ! is_game_over ) {
-        create_thread_object(1, "Log thread", single_log_run, s_args);
+        create_thread_object(single_log_run, s_args);
         sleepTicks(200);
     }
-
+    free(s_args);
     pthread_exit(NULL);
-        
-
-    return NULL;
 }

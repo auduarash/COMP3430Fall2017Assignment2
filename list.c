@@ -1,4 +1,11 @@
+/*
 
+@author: Abdul-Rasheed Audu
+@course: COMP 3430 - Operating Systems
+@title: list.c
+@purpose: List thread.
+
+*/
 
 #include <stdio.h>
 #include <stdlib.h>

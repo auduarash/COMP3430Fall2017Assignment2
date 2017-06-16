@@ -1,3 +1,13 @@
+/*
+
+@author: Abdul-Rasheed Audu
+@course: COMP 3430 - Operating Systems
+@title: keyboard.c
+@purpose: Keyboard thread.
+
+*/
+
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,8 +22,6 @@
 
 #define MAX_BUF 1024
 
-extern int player_row;
-extern int player_column;
 
 extern bool is_game_over;
 
@@ -43,10 +51,6 @@ void *keyboard_run() {
                 case 's': {update_player(1, 0); break;}
             }
             sleepTicks(1);
-            // printf("Data is available now. %d %c \n", retval, c);
-        } else {
-            //TODO: Do some form of quit or message send to main.
-            // printf("No data came in within 5 seconds.\n");
         }
     }
     pthread_exit(NULL);

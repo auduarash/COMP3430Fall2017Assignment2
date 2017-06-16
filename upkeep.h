@@ -15,4 +15,6 @@ void live_lost();
 
 void frog_crossed_pond();
 
+void join_log_threads();
+
 #endif

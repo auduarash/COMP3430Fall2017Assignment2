@@ -3,6 +3,7 @@
 #define LIST_H
 
 #include <stdbool.h>
+#include <pthread.h>
 
 typedef struct LINKEDLIST *LinkedList;
 typedef struct NODE *Node;
@@ -16,6 +17,8 @@ struct NODE {
     Log data;
 };
 struct LOG {
+    pthread_t thread_id;
+    bool is_alive; //is this log currently alive
     int id;
     int row;
     int row_index; // current x location of the log
@@ -24,6 +27,7 @@ struct LOG {
     int frequency; //how fast is the log moving per frame
     bool player_on_log; // is the player currently on this log
     int animation; //four animations exist for the front and end of the log
+    int prev_animation; //four animations exist for the front and end of the log
 };
 
 
