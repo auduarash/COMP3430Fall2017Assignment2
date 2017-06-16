@@ -17,5 +17,8 @@ void create_thread(thread_ptr info);
 
 thread_ptr create_thread_object(void *thread_method, void *arg);
 
+void join_thread(thread_ptr thread);
+
+void join_thread_from_id(pthread_t thread_id);
 
 #endif

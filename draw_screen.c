@@ -54,6 +54,7 @@ void *draw_screen_run() {
             pthread_mutex_unlock(&draw_mutex);
             sleepTicks(1);
         }
+        putBanner("Game is over. Press any key to exit!");
         finalKeypress();
         consoleFinish();
     }

@@ -45,6 +45,7 @@ int main(int argc, char**argv) {
 
 	thread_ptr all_threads[8];
 	all_threads[0] = create_thread_object(draw_screen_run, NULL);
+	sleepTicks(10); //Allow screen to set up before starting other threads
 	all_threads[1]  =  create_thread_object(player_run, NULL);
 	all_threads[2]  = create_thread_object(keyboard_run, NULL);
 	all_threads[3]  = create_thread_object(upkeep_run, NULL);
@@ -59,13 +60,11 @@ int main(int argc, char**argv) {
 	is_game_over = true;
 	int thread_number = 0;
 	for (thread_number = 7; thread_number >= 0; thread_number--) {
-		//printf("Joining thread %d\n", thread_number);
-		pthread_join(all_threads[thread_number]->thread_id, NULL);
-		//printf("Joined thread %d\n", thread_number);
+        printf("Joining thread %d\n", thread_number);
+		join_thread(all_threads[thread_number]);
+        printf("Joined thread %d\n", thread_number);
 	}
-	//printf("Cleaning up\n");
 	clean_up();
-	//printf("Cleaned up\n");
 	pthread_mutex_destroy(&player_position_mutex);
 	pthread_mutex_destroy(&player_tile_mutex);
 	pthread_mutex_destroy(&draw_mutex);

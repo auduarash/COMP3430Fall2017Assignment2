@@ -125,6 +125,7 @@ void *player_anim() {
         pthread_mutex_unlock(&player_tile_mutex);
         sleepTicks(50);
     }
+    printf("Leaving player animation\n");
     pthread_exit(NULL);
 }
 
@@ -136,7 +137,8 @@ void player_run() {
         sleepTicks(10);
         verify_player_position();
     }
-    pthread_join(player_update_thread->thread_id, NULL);
+    printf("Leaving player\n");
+    join_thread(player_update_thread);
     pthread_exit(NULL);
 
 }

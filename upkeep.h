@@ -17,4 +17,9 @@ void frog_crossed_pond();
 
 void join_log_threads();
 
+void clean_up();
+
+void update_score();
+
+
 #endif

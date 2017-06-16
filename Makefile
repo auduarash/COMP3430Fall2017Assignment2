@@ -3,14 +3,14 @@ CFLAGS=-Wall -g
 LINKFLAGS=-lcurses -pthread
 
 
-run: main
-	./main
+run: frogger
+	./frogger
 
-main: main.o console.o single_log.o draw_screen.o player.o keyboard.o log_generator.o common.o upkeep.o list.o
-	$(GCC) $(CFLAGS) list.o upkeep.o common.o single_log.o log_generator.o console.o keyboard.o draw_screen.o player.o main.o -o main $(LINKFLAGS)
+frogger: frogger.o console.o single_log.o draw_screen.o player.o keyboard.o log_generator.o common.o upkeep.o list.o
+	$(GCC) $(CFLAGS) list.o upkeep.o common.o single_log.o log_generator.o console.o keyboard.o draw_screen.o player.o frogger.o -o frogger $(LINKFLAGS)
 
-main.o: main.c
-	$(GCC) $(CFLAGS) -c main.c
+frogger.o: frogger.c
+	$(GCC) $(CFLAGS) -c frogger.c
 
 list.o: list.c list.h
 	$(GCC) $(CFLAGS) -c list.c
@@ -43,4 +43,4 @@ upkeep.o: upkeep.h upkeep.c
 	$(GCC) $(CFLAGS) -c upkeep.c
 
 clean:
-	rm -rf main *.o test_list
+	rm -rf frogger *.o test_list

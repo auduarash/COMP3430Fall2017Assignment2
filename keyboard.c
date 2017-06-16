@@ -33,8 +33,8 @@ void *keyboard_run() {
 
     char buf[MAX_BUF];
     while ( ! is_game_over ) {
-        tv.tv_sec = 5;
-        tv.tv_usec = 0;
+        tv.tv_sec = 0;
+        tv.tv_usec = 1000;
         /*Watch stdin for input*/
         FD_ZERO(&rfds);
         FD_SET(0, &rfds);

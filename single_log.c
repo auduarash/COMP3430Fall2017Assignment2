@@ -117,7 +117,6 @@ void *update_thread_anim(void *arg) {
         pthread_mutex_unlock(&draw_mutex);
         sleepTicks(50);
     }
-    printf("Exiting update\n");
     pthread_exit(NULL);
 }
 
@@ -131,9 +130,7 @@ void * single_log_run( void * args ) {
         move_log(log);
         sleepTicks(log->frequency);
     }
-    printf("Joining refresh thread\n");
-    pthread_join(update_thread->thread_id, NULL);
-    printf("Leaving single log\n");
+    join_thread(update_thread);
     free(update_thread);
     pthread_exit(NULL);
 }

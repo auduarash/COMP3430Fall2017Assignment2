@@ -16,6 +16,7 @@
 #include "list.h"
 #include "upkeep.h"
 #include "player.h"
+#include "common.h"
 
 
 /*
@@ -31,6 +32,7 @@ static int player_score = 0;
 
 extern bool is_game_over;
 extern pthread_cond_t game_over;
+extern pthread_mutex_t draw_mutex;
 
 void * upkeep_run () {
     pthread_mutex_init(&active_list_mutex, NULL);
@@ -39,10 +41,9 @@ void * upkeep_run () {
     dead_logs = create_linked_list();
     pthread_mutex_unlock(&active_list_mutex);
     upkeep_ready = true;
-
+    update_score();
     while ( ! is_game_over ) {
     }
-    printf("Ending upkeep thread\n");
     pthread_exit(NULL);
 }
 
@@ -84,7 +85,7 @@ void delete_log(Log expired) {
     if (success) {
         pthread_mutex_lock(&active_list_mutex);
         add_item(dead_logs, expired);
-        pthread_join(expired->thread_id, NULL);
+        join_thread_from_id(expired->thread_id);
         pthread_mutex_unlock(&active_list_mutex);
 
     }
@@ -106,13 +107,18 @@ bool place_player_on_log(int row, int column) {
     return placed;
 }
 
+void update_score() {
+    pthread_mutex_lock(&draw_mutex);
+    char le_lives = no_lives + '0';
+    putString(&le_lives, 0, 42, 1);
+    pthread_mutex_unlock(&draw_mutex);
+}
+
 
 void live_lost() {
     no_lives -= 1;
-    char le_lives = no_lives + '0';
-    putString(&le_lives, 0, 42, 1);
+    update_score();
     if (no_lives <= 0) {
-        putString("Game over", 0, 42, 9);
         pthread_cond_signal(&game_over);
     } else {
         reset_player_position();

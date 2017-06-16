@@ -28,3 +28,13 @@ thread_ptr create_thread_object(void *thread_method, void *arg) {
 	create_thread(new_thread);
 	return new_thread;
 }
+
+void join_thread(thread_ptr thread) {
+	pthread_join(thread->thread_id, NULL);
+	return;
+}
+
+void join_thread_from_id(pthread_t t_id) {
+	pthread_join(t_id, NULL);
+	return;
+}
