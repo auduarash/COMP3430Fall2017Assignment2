@@ -1,0 +1,988 @@
+/*
+
+@author: Abdul-Rasheed Audu
+@course: COMP 3430 - Operating Systems
+@title: common.h
+@purpose: Contains common methods used by multiple files in program
+
+*/
+
+#include <stdio.h>
+#include <pthread.h>
+#include <stdlib.h>
+#include "common.h"
+
+void create_thread(thread_ptr info) {
+	pthread_attr_t attr;
+	int s = pthread_attr_init(&attr);
+	validate_call(s, "pthread_init");
+	s = pthread_create(&info->thread_id, &attr, info->thread_method, info->thread_arg);
+	validate_call(s, "pthread_create");
+}
+
+
+thread_ptr create_thread_object(void *thread_method, void *arg) {
+	thread_ptr new_thread = malloc(sizeof(struct THREADINFO));
+	new_thread->thread_method = thread_method;
+	new_thread->thread_arg = arg;
+	create_thread(new_thread);
+	return new_thread;
+}
+
+void join_thread(thread_ptr thread) {
+	pthread_join(thread->thread_id, NULL);
+	return;
+}
+
+void join_thread_from_id(pthread_t t_id) {
+	pthread_join(t_id, NULL);
+	return;
+}#ifndef COMMON_H
+#define COMMON_H
+
+#include <pthread.h>
+#define validate_call(s, error_message) \
+	if (s != 0) perror(error_message);
+
+
+typedef struct THREADINFO *thread_ptr;
+struct THREADINFO {
+	pthread_t thread_id;
+	void *thread_method;
+	void *thread_arg;
+};
+
+void create_thread(thread_ptr info);
+
+thread_ptr create_thread_object(void *thread_method, void *arg);
+
+void join_thread(thread_ptr thread);
+
+void join_thread_from_id(pthread_t thread_id);
+
+#endif/*
+
+@author: Abdul-Rasheed Audu
+@course: COMP 3430 - Operating Systems
+@title: draW_screen.c
+@purpose: Screen refresh thread.
+
+*/
+
+#include <unistd.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <pthread.h>
+#include "console.h"
+#include "draw_screen.h"
+
+static char *GAME_BOARD[] = {
+"                                   Lives:",
+"/------\\          /------\\          /------\\          /------\\          /------\\",
+"|      |          |      |          |      |          |      |          |      |",
+"+      +----------+      +----------+      +----------+      +----------+      +",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"",
+"",
+"",
+"" };
+extern pthread_mutex_t draw_mutex;
+extern pthread_cond_t wait_for_console;
+extern bool is_game_over;
+
+void *draw_screen_run() {
+    pthread_mutex_lock(&draw_mutex);
+    if (consoleInit(GAME_ROWS, GAME_COLS, GAME_BOARD)) {
+        pthread_mutex_unlock(&draw_mutex);
+        // int i;
+        while (! is_game_over ) {
+            pthread_mutex_lock(&draw_mutex);
+            consoleRefresh();
+            pthread_mutex_unlock(&draw_mutex);
+            sleepTicks(1);
+        }
+        putBanner("Game is over. Press any key to exit!");
+        finalKeypress();
+        consoleFinish();
+    }
+    pthread_exit(NULL);;
+}#ifndef DRAW_SCREEN_H
+#define DRAW_SCREEN_H
+
+
+#define GAME_ROWS 24
+#define GAME_COLS 80
+
+/**** DIMENSIONS MUST MATCH the ROWS/COLS */
+
+
+
+void *draw_screen_run();
+
+
+
+#endif/*
+
+@author: Abdul-Rasheed Audu
+@course: COMP 3430 - Operating Systems
+@title: frogger.c
+@purpose: Starts up all threads in the program and cleans up when done
+
+*/
+
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <string.h>
+#include <stdbool.h>
+#include "console.h"
+#include "common.h"
+#include "draw_screen.h" 
+#include "player.h"
+#include "keyboard.h"
+#include "upkeep.h"
+#include "log_generator.h"
+
+
+
+bool is_game_over = false;
+
+pthread_mutex_t draw_mutex;
+pthread_mutex_t player_position_mutex;
+pthread_mutex_t player_tile_mutex;
+
+pthread_cond_t wait_for_console;
+pthread_cond_t game_over;
+
+
+
+
+
+int main(int argc, char**argv) {
+	// exampleRun();
+	// create_player_thread();
+	pthread_mutex_init(&player_position_mutex, NULL);
+	pthread_mutex_init(&player_tile_mutex, NULL);
+	pthread_mutex_init(&draw_mutex, NULL);
+	pthread_cond_init(&game_over, NULL);
+
+	thread_ptr all_threads[8];
+	all_threads[0] = create_thread_object(draw_screen_run, NULL);
+	sleepTicks(10); //Allow screen to set up before starting other threads
+	all_threads[1]  =  create_thread_object(player_run, NULL);
+	all_threads[2]  = create_thread_object(keyboard_run, NULL);
+	all_threads[3]  = create_thread_object(upkeep_run, NULL);
+
+	/* We need an array of indices since we will be passing the pointers as arguments*/
+	int log_index;
+	for (log_index = 0; log_index < 4; log_index++) {
+		LogGeneratorParam params = create_log_generator_params(log_index);
+		all_threads[4+log_index] = create_thread_object(log_generator_run, params);
+	}
+	pthread_cond_wait(&game_over, &draw_mutex);
+	is_game_over = true;
+	int thread_number = 0;
+	for (thread_number = 7; thread_number >= 0; thread_number--) {
+		join_thread(all_threads[thread_number]);
+	}
+	clean_up();
+	pthread_mutex_destroy(&player_position_mutex);
+	pthread_mutex_destroy(&player_tile_mutex);
+	pthread_mutex_destroy(&draw_mutex);
+	return 0;
+}
+/*
+
+@author: Abdul-Rasheed Audu
+@course: COMP 3430 - Operating Systems
+@title: keyboard.c
+@purpose: Keyboard thread.
+
+*/
+
+
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <pthread.h>
+#include "console.h"
+#include "keyboard.h"
+#include "player.h"
+#include "shared.h"
+
+#define MAX_BUF 1024
+
+
+extern bool is_game_over;
+
+void *keyboard_run() {
+    fd_set rfds;
+    struct timeval tv;
+    int retval;
+
+
+    char buf[MAX_BUF];
+    while ( ! is_game_over ) {
+        tv.tv_sec = 0;
+        tv.tv_usec = 1000;
+        /*Watch stdin for input*/
+        FD_ZERO(&rfds);
+        FD_SET(0, &rfds);
+        retval = select(1, &rfds, NULL, NULL, &tv);
+
+        if (retval == -1) {
+            perror("select()");
+        } else if (retval) {
+            read(STDIN_FILENO, buf, MAX_BUF);
+            switch (buf[0]) {
+                case 'w': {update_player(-1, 0); break;}
+                case 'd': {update_player(0, 1); break;}
+                case 'a': {update_player(0, -1); break;}
+                case 's': {update_player(1, 0); break;}
+            }
+            sleepTicks(1);
+        }
+    }
+    pthread_exit(NULL);
+}#ifndef KEYBOARD_H
+#define KEYBOARD_H
+
+
+
+/**** DIMENSIONS MUST MATCH the ROWS/COLS */
+
+
+
+void *keyboard_run();
+
+
+
+#endif/*
+
+@author: Abdul-Rasheed Audu
+@course: COMP 3430 - Operating Systems
+@title: list.c
+@purpose: List thread.
+
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "list.h"
+
+Node create_node(Log data, Node next) {
+    Node newNode = malloc(sizeof( struct NODE ));
+    if (newNode != NULL) {
+        newNode->data = data;
+        newNode->next = next;
+    }
+    return newNode;
+}
+
+LinkedList create_linked_list() {
+    LinkedList list = malloc(sizeof(struct LINKEDLIST));
+    if (list != NULL) {
+        list->top = NULL;
+        list->size = 0;
+    }
+    //TODO: Graceful error for NULL
+    return list;
+}
+
+bool add_item(LinkedList list, Log data) {
+    bool success = false;
+    if ( list != NULL ) {
+        Node newNode = create_node(data, list->top);
+        if (newNode != NULL) {
+            list->top = newNode;
+            success = true;
+        }
+    }
+    return success;
+}
+
+bool remove_item(LinkedList list, Log data) {
+    bool success = false;
+    if ( list != NULL && list->top != NULL ) {
+        Node curr = list->top;
+        if (curr->data == data) {
+            list->top = curr->next;
+            success = true;
+            free(curr);
+        } else {
+            Node prev = curr;
+            curr = curr->next;
+            while (curr != NULL && ! success ) {
+                if (curr->data == data) {
+                    prev->next = curr->next;
+                    success = true;
+                    free(curr);
+                } else {
+                    prev = curr;
+                    curr = curr->next;
+                }
+            }
+        }
+    }
+    return success;
+}
+
+void print_items(LinkedList list) {
+    if (list == NULL)
+        return;
+    Node curr = list->top;
+    while (curr != NULL ) {
+        printf(" < %d > | ", curr->data->row_index);
+        curr = curr->next;
+    }
+    printf("\n");
+}
+
+Log remove_front(LinkedList list ) {
+    if (list == NULL || list->top == NULL) {
+        return NULL;
+    }
+    Log front = list->top->data;
+    list->top = list->top->next;
+    return front;
+}
+
+
+bool is_empty(LinkedList list) {
+    return list == NULL || list->top == NULL;
+}
+
+void clear_linked_list(LinkedList list) {
+    Node curr = list->top;
+    while ( curr != NULL ) {
+        Node to_clear = curr;
+        curr = curr->next;
+        free(to_clear->data);
+        free(to_clear);
+    }
+}
+#ifndef LIST_H
+#define LIST_H
+
+#include <stdbool.h>
+#include <pthread.h>
+
+typedef struct LINKEDLIST *LinkedList;
+typedef struct NODE *Node;
+typedef struct LOG *Log;
+struct LINKEDLIST {
+    Node top;
+    int size;
+};
+struct NODE {
+    Node next;
+    Log data;
+};
+struct LOG {
+    pthread_t thread_id;
+    bool is_alive; //is this log currently alive
+    int id;
+    int row;
+    int row_index; // current x location of the log
+    int column_index; // the current y location of the log
+    int direction; //is the log heading east or west
+    int frequency; //how fast is the log moving per frame
+    bool player_on_log; // is the player currently on this log
+    int animation; //four animations exist for the front and end of the log
+    int prev_animation; //four animations exist for the front and end of the log
+};
+
+
+Node create_node(Log data, Node next);
+
+LinkedList create_linked_list();
+
+bool add_item(LinkedList list, Log data);
+
+bool remove_item(LinkedList list, Log data);
+
+void print_items(LinkedList list);
+
+Log remove_front(LinkedList list);
+
+bool is_empty(LinkedList list);
+
+void clear_linked_list(LinkedList list);
+
+#endif/*
+
+@author: Abdul-Rasheed Audu
+@course: COMP 3430 - Operating Systems
+@title: log_generator.c
+@purpose: Thread that generates logs on a specified row.
+
+*/
+#include <stdlib.h>
+#include <pthread.h>
+#include <stdio.h>
+#include "common.h"
+#include "single_log.h"
+#include "log_generator.h"
+#include "console.h"
+
+extern pthread_mutex_t draw_mutex;
+extern pthread_cond_t wait_for_console;
+
+extern bool is_game_over;
+
+LogGeneratorParam create_log_generator_params(int index) {
+    LogGeneratorParam params = malloc(sizeof(struct LOG_GENERATOR_PARAMS));
+    if (params != NULL ){
+        params->index = index;
+    }
+    return params;
+}
+
+
+
+void *log_generator_run(void *arg) {
+    LogGeneratorParam param = (LogGeneratorParam) arg;
+    if (param == NULL) {
+        pthread_exit(NULL);
+    }
+    int index = param->index;
+    SingleLogArgs s_args = malloc(sizeof(struct SINGLE_LOG_ARGS));
+    s_args->row = index;
+    s_args->direction = (index % 2) ? 1 : -1;
+    s_args->refresh_ticks = 25;
+
+
+
+    while ( ! is_game_over ) {
+        create_thread_object(single_log_run, s_args);
+        sleepTicks(200);
+    }
+    free(s_args);
+    pthread_exit(NULL);
+}#ifndef LOG_GENERATOR_H
+#define LOG_GENERATOR_H
+
+
+typedef struct LOG_GENERATOR_PARAMS *LogGeneratorParam;
+struct LOG_GENERATOR_PARAMS {
+    int index;
+};
+
+LogGeneratorParam create_log_generator_params(int index);
+
+void *log_generator_run();
+
+
+#endif/*
+
+@author: Abdul-Rasheed Audu
+@course: COMP 3430 - Operating Systems
+@title: player.c
+@purpose: In charge of handling the frog's movements
+
+*/
+
+#include <string.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include "draw_screen.h"
+#include "console.h"
+#include "player.h"
+#include "shared.h"
+#include "upkeep.h"
+#include "common.h"
+
+#define PLAYER_ANIM_TILES 2
+#define PLAYER_HEIGHT 2
+#define OUT_OF_BOUNDS 21
+#define STAGE_ONE 17
+#define STAGE_TWO 13
+#define STAGE_THREE 9
+#define STAGE_FOUR 5
+#define END_OF_GAME 2
+#define FINAL_JUMP_DIFF 3
+#define VERTICAL_JUMP_DIFF 4
+
+static char* PLAYER_GRAPHIC[PLAYER_ANIM_TILES][PLAYER_HEIGHT+1] = {
+  {"@@",
+   "<>"},
+  {"--",
+   "<>"}
+};
+extern pthread_mutex_t player_position_mutex;
+extern pthread_mutex_t player_tile_mutex;
+extern pthread_mutex_t draw_mutex;
+extern bool is_game_over;
+
+static int player_row = 21;
+static int player_column = 38;
+static int prev_row = 21;
+static int prev_column = 38;
+static int player_current_tile = 0;
+static thread_ptr player_update_thread;
+
+
+void set_player_position(int x, int y) {
+    if (x != 0) {
+        if (x > 0) {
+            switch (player_row) {
+                case STAGE_FOUR: player_row = STAGE_THREE; break;
+                case STAGE_THREE: player_row = STAGE_TWO; break;
+                case STAGE_TWO: player_row = STAGE_ONE; break;
+                case STAGE_ONE: player_row = OUT_OF_BOUNDS; break;
+            }
+        } else {
+            switch (player_row) {
+                case OUT_OF_BOUNDS: player_row = STAGE_ONE; break;
+                case STAGE_ONE: player_row = STAGE_TWO; break;
+                case STAGE_TWO: player_row = STAGE_THREE; break;
+                case STAGE_THREE: player_row = STAGE_FOUR; break;
+                case STAGE_FOUR: {
+                    int player_y_base = player_column % 18;
+                    if (1 <= player_y_base && player_y_base <= 5) {
+                        player_row = END_OF_GAME; 
+                        place_player_on_log(5, 0);
+                    }
+                    break;
+                }
+            }
+        }
+    } else if (y != 0) {
+        int new_y = player_column + y;
+        if (new_y >= 0 && new_y < GAME_COLS-2){
+            player_column = new_y;
+        }
+    }
+} 
+
+
+void update_player(int x, int y) {
+    pthread_mutex_lock(&player_position_mutex);
+
+    set_player_position(x, y);
+
+    pthread_mutex_lock(&player_tile_mutex);
+    char **tile = PLAYER_GRAPHIC[player_current_tile];
+    pthread_mutex_unlock(&player_tile_mutex);
+    
+    pthread_mutex_lock(&draw_mutex);
+    consoleClearImage(prev_row, prev_column, PLAYER_HEIGHT, strlen(tile[0]));
+    consoleDrawImage(player_row, player_column, tile, PLAYER_HEIGHT);
+    prev_row = player_row;
+    prev_column = player_column;
+    pthread_mutex_unlock(&draw_mutex);
+    pthread_mutex_unlock(&player_position_mutex);
+}
+
+void verify_player_position() {
+    switch (player_row) {
+        case OUT_OF_BOUNDS: break;
+        case END_OF_GAME: {
+            frog_crossed_pond();
+            break;
+        }
+        default: {
+            int row = (player_row - 5) / 4;
+            bool player_found_log = place_player_on_log(row, player_column);
+
+            if ( ! player_found_log ) {
+                live_lost();
+            }
+            break;
+        }
+    }
+}
+
+void *player_anim() {
+    while ( ! is_game_over ) {
+        pthread_mutex_lock(&player_tile_mutex);
+        player_current_tile = (player_current_tile + 1) % 2;
+        pthread_mutex_unlock(&player_tile_mutex);
+        sleepTicks(50);
+    }
+    pthread_exit(NULL);
+}
+
+void exit_player_thread() {
+    join_thread(player_update_thread);
+    pthread_exit(NULL);
+}
+
+void player_run() {
+    //Do not start until console has been initialized
+    player_update_thread = create_thread_object(player_anim, NULL );
+    while ( ! is_game_over ) {
+        update_player(0, 0);
+        sleepTicks(10);
+        verify_player_position();
+    }
+    exit_player_thread();
+}
+
+void reset_player_position() {
+    pthread_mutex_lock(&player_position_mutex);
+    player_row = 21;
+    player_column = 38;
+    prev_row = 21;
+    prev_column = 38;
+    pthread_mutex_unlock(&player_position_mutex);
+    disableConsole(true);
+    sleepTicks(200);
+    disableConsole(false);
+}#ifndef PLAYER_H
+#define PLAYER_H
+
+void set_player_position(int x, int y);
+void update_player(int x, int y);
+
+void player_run();
+
+void verify_player_position();
+
+void reset_player_position();
+
+void exit_player_thread();
+
+#endif/*
+
+@author: Abdul-Rasheed Audu
+@course: COMP 3430 - Operating Systems
+@title: single_log.c
+@purpose: Logic for the movement
+    and animation of a single log moving across the screen
+
+*/
+
+#include <stdlib.h>
+#include <pthread.h>
+#include <string.h>
+#include <stdio.h>
+#include "common.h"
+#include "draw_screen.h"
+#include "list.h"
+#include "console.h"
+#include "upkeep.h"
+#include "single_log.h"
+#include "upkeep.h"
+#include "player.h"
+
+#define LOG_OFFSET 5
+#define LOG_LENGTH 24
+
+static char *top = "/======================\\";
+static char *bottom = "\\======================/";
+static char *animations[][4] = {
+    {"|", "|", "|", "|"},
+    {"|", "-", "|", "+"},
+    {"-", "|", "+", "|"},
+    {"-", "-", "+", "+"}
+};
+static int top_x_animation[] = {4, 8, 12, 16};
+static int bottom_x_animation[] = {1, 13, 8, 20};
+static char *x_animation = "X";
+
+
+extern pthread_mutex_t draw_mutex;
+extern bool is_game_over;
+
+/*
+    move_log - moves the log using appropriate parameters
+        move_log
+        if player_on_log
+            move_player in direction of log
+        
+        if log_finally_left
+            delete_log using some method somewhere
+*/
+
+void move_log( Log log ) {
+    int old_column = log->column_index;
+    int top_bar = log->row_index;
+    int bottom_bar = top_bar + 3;
+    if (log->player_on_log) {
+        update_player(0, log->direction);
+    }
+    pthread_mutex_lock(&draw_mutex);
+    
+    //clear the top bar
+    consoleClearImage(top_bar, old_column, 1, LOG_LENGTH);
+    consoleDrawImage(top_bar, old_column+log->direction, &top, 1);
+    
+    //clear the bottom bar
+    consoleClearImage(bottom_bar, old_column, 1, LOG_LENGTH);
+    consoleDrawImage(bottom_bar, old_column+log->direction, &bottom, 1);
+
+    consoleClearImage(top_bar+1, old_column, 1, 1);
+    consoleDrawImage(top_bar+1, old_column+log->direction, &animations[log->animation][0], 1);
+    
+    consoleClearImage(top_bar+1, old_column + LOG_LENGTH - 1, 1, 1);
+    consoleDrawImage(top_bar+1, old_column+log->direction + LOG_LENGTH - 1, &animations[log->animation][2], 1);
+    
+    consoleClearImage(top_bar+2, old_column, 1, 1);
+    consoleDrawImage(top_bar+2, old_column+log->direction, &animations[log->animation][1], 1);
+    
+    consoleClearImage(top_bar+2, old_column + LOG_LENGTH-1, 1, 1);
+    consoleDrawImage(top_bar+2, old_column+log->direction+LOG_LENGTH-1, &animations[log->animation][3], 1);
+
+    consoleClearImage(top_bar+1, old_column + top_x_animation[log->prev_animation], 1, 1);
+    consoleDrawImage(top_bar+1, old_column + log->direction + top_x_animation[log->animation], &x_animation, 1);
+    
+    consoleClearImage(top_bar+2, old_column + bottom_x_animation[log->prev_animation], 1, 1);
+    consoleDrawImage(top_bar+2, old_column + log->direction + bottom_x_animation[log->animation], &x_animation, 1);
+    log->prev_animation = log->animation;
+    
+
+    pthread_mutex_unlock(&draw_mutex);
+    log->column_index += log->direction;
+    
+    if (log->direction < 0 && log->column_index < - LOG_LENGTH  ) {
+        log->is_alive = false;
+    } else if (log->direction > 0 && log->column_index >= GAME_COLS) {
+        log->is_alive = false;
+    } else {
+        sleepTicks(log->frequency);
+    }
+}
+
+void set_new_log_params(Log log, int row, int direction ) {
+    log->is_alive = true;
+    log->row = row;
+    log->column_index = (direction < 0) ? GAME_COLS : -LOG_LENGTH;
+    log->row_index = 4 * row + 4;
+    log->player_on_log = false;
+    log->direction = direction;
+    log->frequency = 10 / (5 - row);
+    log->animation = log->prev_animation = 0;
+    log->thread_id = pthread_self();
+
+}
+
+void *update_thread_anim(void *arg) {
+    Log log = (Log) arg;
+    while ( log->is_alive ) {
+        pthread_mutex_lock(&draw_mutex);
+        log->animation = (log->animation + 1 ) % 4;
+        pthread_mutex_unlock(&draw_mutex);
+        sleepTicks(50);
+    }
+    pthread_exit(NULL);
+}
+
+void * single_log_run( void * args ) {
+    SingleLogArgs log_params = (SingleLogArgs) args;
+    Log log = get_new_log();
+    set_new_log_params(log, log_params->row, log_params->direction);
+
+    thread_ptr update_thread = create_thread_object(update_thread_anim, log);
+    while ( ! is_game_over && log->is_alive ) {
+        move_log(log);
+    }
+    join_thread(update_thread);
+    delete_log(log);
+    free(update_thread);
+    pthread_exit(NULL);
+}
+
+#ifndef SINGLE_LOG_C
+#define SINGLE_LOG_C
+
+
+
+typedef struct SINGLE_LOG_ARGS *SingleLogArgs;
+struct SINGLE_LOG_ARGS {
+    int row;
+    int direction;
+    int refresh_ticks;
+};
+
+/*
+    Method: single_log_run
+    Arguments: log_id
+
+    Logs are reusable. The log_id is representative of the location
+        of the log on the screen. Direction is either positive or
+        negative representing if the log moves to the right (+ve)
+        of to the left (-ve).
+*/
+
+
+
+void *single_log_run ( void * args);
+
+
+#endif/*
+
+@author: Abdul-Rasheed Audu
+@course: COMP 3430 - Operating Systems
+@title: single_log.c
+@purpose: Handles memory allocated for linked lists. Creates and deletes and 
+    reuses linked lists as required.
+
+*/
+
+
+#include <stdlib.h>
+#include <pthread.h>
+#include <stdio.h>
+#include "console.h"
+#include "list.h"
+#include "upkeep.h"
+#include "player.h"
+#include "common.h"
+
+
+/*
+    Upkeep helps handle memory for objects that come and go as the program progresses
+*/
+static LinkedList active_logs;
+static LinkedList dead_logs;
+static bool upkeep_ready = false;
+static pthread_mutex_t active_list_mutex;
+static int current_log_id = 0;
+static int no_lives = 3;
+static int player_score = 0;
+
+extern bool is_game_over;
+extern pthread_cond_t game_over;
+extern pthread_mutex_t draw_mutex;
+
+void * upkeep_run () {
+    pthread_mutex_init(&active_list_mutex, NULL);
+    pthread_mutex_lock(&active_list_mutex);
+    active_logs = create_linked_list();
+    dead_logs = create_linked_list();
+    pthread_mutex_unlock(&active_list_mutex);
+    upkeep_ready = true;
+    update_score();
+    while ( ! is_game_over ) {
+    }
+    pthread_exit(NULL);
+}
+
+void clean_up() {
+    pthread_mutex_lock(&active_list_mutex);
+    clear_linked_list(active_logs);
+    clear_linked_list(dead_logs);
+    pthread_mutex_unlock(&active_list_mutex);
+}
+
+Log get_new_log() {
+    while ( ! upkeep_ready ) {
+        sleepTicks(10);
+    }
+
+    Log new;
+    if ( is_empty(dead_logs) ) {
+        new = malloc(sizeof(struct LOG));
+    } else {
+        pthread_mutex_lock(&active_list_mutex);
+        new = remove_front(dead_logs);
+        pthread_mutex_unlock(&active_list_mutex);
+    }
+    new->id = current_log_id++;
+    pthread_mutex_lock(&active_list_mutex);
+    add_item(active_logs, new);
+    pthread_mutex_unlock(&active_list_mutex);
+    return new;
+}
+
+
+void delete_log(Log expired) {
+    bool success = false;
+    pthread_mutex_lock(&active_list_mutex);
+    expired->is_alive = false;
+    success = remove_item(active_logs, expired);
+    pthread_mutex_unlock(&active_list_mutex);
+    if (success) {
+        pthread_mutex_lock(&active_list_mutex);
+        add_item(dead_logs, expired);
+        join_thread_from_id(expired->thread_id);
+        pthread_mutex_unlock(&active_list_mutex);
+
+    }
+}
+
+bool place_player_on_log(int row, int column) {
+    bool placed = false;
+    pthread_mutex_lock(&active_list_mutex);
+    Node curr = active_logs->top;
+    while (curr != NULL) {
+        Log data = curr->data;
+        data->player_on_log = false;
+        if (data->row == row && column >= data->column_index && column <= data->column_index+22) {
+            data->player_on_log = placed = true;
+        }
+        curr = curr->next;
+    }
+    pthread_mutex_unlock(&active_list_mutex);
+    return placed;
+}
+
+void update_score() {
+    pthread_mutex_lock(&draw_mutex);
+    char le_lives = no_lives + '0';
+    putString(&le_lives, 0, 42, 1);
+    pthread_mutex_unlock(&draw_mutex);
+}
+
+
+void live_lost() {
+    no_lives -= 1;
+    update_score();
+    if (no_lives <= 0) {
+        pthread_cond_broadcast(&game_over);
+        exit_player_thread();
+    } else {
+        reset_player_position();
+    }
+}
+
+void frog_crossed_pond() {
+    player_score += 1;
+    reset_player_position();
+}#ifndef UPKEEP_H
+#define UPKEEP_H
+
+#include "list.h"
+
+void *upkeep_run();
+
+Log get_new_log();
+
+void delete_log(Log log);
+
+bool place_player_on_log(int row, int player_y_position);
+
+void live_lost();
+
+void frog_crossed_pond();
+
+void join_log_threads();
+
+void clean_up();
+
+void update_score();
+
+
+#endif
