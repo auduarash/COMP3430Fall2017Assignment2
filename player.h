@@ -10,5 +10,6 @@ void verify_player_position();
 
 void reset_player_position();
 
+void exit_player_thread();
 
 #endif

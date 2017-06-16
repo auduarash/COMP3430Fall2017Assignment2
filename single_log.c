@@ -91,9 +91,11 @@ void move_log( Log log ) {
     log->column_index += log->direction;
     
     if (log->direction < 0 && log->column_index < - LOG_LENGTH  ) {
-        delete_log(log);
+        log->is_alive = false;
     } else if (log->direction > 0 && log->column_index >= GAME_COLS) {
-        delete_log(log);
+        log->is_alive = false;
+    } else {
+        sleepTicks(log->frequency);
     }
 }
 
@@ -106,6 +108,7 @@ void set_new_log_params(Log log, int row, int direction ) {
     log->direction = direction;
     log->frequency = 10 / (5 - row);
     log->animation = log->prev_animation = 0;
+    log->thread_id = pthread_self();
 
 }
 
@@ -128,9 +131,9 @@ void * single_log_run( void * args ) {
     thread_ptr update_thread = create_thread_object(update_thread_anim, log);
     while ( ! is_game_over && log->is_alive ) {
         move_log(log);
-        sleepTicks(log->frequency);
     }
     join_thread(update_thread);
+    delete_log(log);
     free(update_thread);
     pthread_exit(NULL);
 }

@@ -27,7 +27,7 @@ static LinkedList dead_logs;
 static bool upkeep_ready = false;
 static pthread_mutex_t active_list_mutex;
 static int current_log_id = 0;
-static int no_lives = 1;
+static int no_lives = 3;
 static int player_score = 0;
 
 extern bool is_game_over;
@@ -80,7 +80,6 @@ void delete_log(Log expired) {
     pthread_mutex_lock(&active_list_mutex);
     expired->is_alive = false;
     success = remove_item(active_logs, expired);
-
     pthread_mutex_unlock(&active_list_mutex);
     if (success) {
         pthread_mutex_lock(&active_list_mutex);
@@ -119,7 +118,8 @@ void live_lost() {
     no_lives -= 1;
     update_score();
     if (no_lives <= 0) {
-        pthread_cond_signal(&game_over);
+        pthread_cond_broadcast(&game_over);
+        exit_player_thread();
     } else {
         reset_player_position();
     }

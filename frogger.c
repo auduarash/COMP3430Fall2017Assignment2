@@ -2,8 +2,8 @@
 
 @author: Abdul-Rasheed Audu
 @course: COMP 3430 - Operating Systems
-@title: main.c
-@purpose: Starts up all threads in the program
+@title: frogger.c
+@purpose: Starts up all threads in the program and cleans up when done
 
 */
 
@@ -13,6 +13,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <stdbool.h>
+#include "console.h"
 #include "common.h"
 #include "draw_screen.h" 
 #include "player.h"
@@ -60,9 +61,7 @@ int main(int argc, char**argv) {
 	is_game_over = true;
 	int thread_number = 0;
 	for (thread_number = 7; thread_number >= 0; thread_number--) {
-        printf("Joining thread %d\n", thread_number);
 		join_thread(all_threads[thread_number]);
-        printf("Joined thread %d\n", thread_number);
 	}
 	clean_up();
 	pthread_mutex_destroy(&player_position_mutex);

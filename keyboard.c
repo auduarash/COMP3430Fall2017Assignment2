@@ -43,7 +43,7 @@ void *keyboard_run() {
         if (retval == -1) {
             perror("select()");
         } else if (retval) {
-            read(STDIN_FILENO, buf, 1);
+            read(STDIN_FILENO, buf, MAX_BUF);
             switch (buf[0]) {
                 case 'w': {update_player(-1, 0); break;}
                 case 'd': {update_player(0, 1); break;}

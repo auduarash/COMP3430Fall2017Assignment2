@@ -46,6 +46,7 @@ static int player_column = 38;
 static int prev_row = 21;
 static int prev_column = 38;
 static int player_current_tile = 0;
+static thread_ptr player_update_thread;
 
 
 void set_player_position(int x, int y) {
@@ -114,6 +115,7 @@ void verify_player_position() {
             if ( ! player_found_log ) {
                 live_lost();
             }
+            break;
         }
     }
 }
@@ -125,22 +127,23 @@ void *player_anim() {
         pthread_mutex_unlock(&player_tile_mutex);
         sleepTicks(50);
     }
-    printf("Leaving player animation\n");
+    pthread_exit(NULL);
+}
+
+void exit_player_thread() {
+    join_thread(player_update_thread);
     pthread_exit(NULL);
 }
 
 void player_run() {
     //Do not start until console has been initialized
-    thread_ptr player_update_thread = create_thread_object(player_anim, NULL );
+    player_update_thread = create_thread_object(player_anim, NULL );
     while ( ! is_game_over ) {
         update_player(0, 0);
         sleepTicks(10);
         verify_player_position();
     }
-    printf("Leaving player\n");
-    join_thread(player_update_thread);
-    pthread_exit(NULL);
-
+    exit_player_thread();
 }
 
 void reset_player_position() {
